@@ -14,3 +14,8 @@ Uninhabited (Here = There {fresh} e) where
 export
 Uninhabited (There {fresh} e = Here) where
   uninhabited Refl impossible
+
+public export
+(.recall) : (xs : FreshList a neq) -> (pos : x `Elem` xs) -> a
+(x :: xs).recall Here = x
+(x :: xs).recall (There pos) = xs.recall pos

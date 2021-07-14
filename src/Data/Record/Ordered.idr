@@ -141,10 +141,17 @@ namespace Record
   (val0, rec) .INSERT (AfterThere pos) arg val = (val0, rec.INSERT pos arg val)
 
   public export
+  (.insert') : {auto 0 flds : Fields args} -> Record args flds -> (pos : Space args) ->
+    (arg : String) -> {auto 0 fresh : arg # args} -> {0 fld : Type} -> (val : fld) ->
+    Record (args.insert pos arg {fresh}) (flds.insert pos arg {fresh} fld)
+  rec.insert' pos arg val = MkRecord $ rec.content.INSERT pos arg val
+
+  public export
   (.insert) : Record args flds -> (pos : Space args) ->
     (arg : String) -> {auto 0 fresh : arg # args} -> {0 fld : Type} -> (val : fld) ->
     Record (args.insert pos arg {fresh}) (flds.insert pos arg {fresh} fld)
   rec.insert pos arg val = MkRecord $ rec.content.INSERT pos arg val
+
 
 public export
 FOLDR : {args : ArgList} ->
