@@ -66,8 +66,8 @@ infix 5 ||>, |>
 
 public export
 (||>) : {args : ArgList} -> (f : Type -> Type) -> FIELDS args -> FIELDS args
-(||>) {args =     []     } f       flds  = ()
-(||>) {args = arg :: args} f (fld, flds) = (f fld, f ||> flds)
+(||>) {args =     []     } f flds = ()
+(||>) {args = arg :: args} f flds = (f (fst flds), f ||> (snd flds))
 
 public export
 (|>) : {args : ArgList} -> (f : Type -> Type) -> Fields args -> Fields args
@@ -215,9 +215,61 @@ tabulate' : {args : ArgList} -> {0 flds : {0 arg : String} -> (pos : arg `Elem` 
   Record args (tabulate flds)
 tabulate' = MkRecord . TABULATE'
 
+infixr 3 ~|>, ~>
 
-{- TODO: gallais's MRecord, ought to be easy with map -}
+public export
+(~|>) : {args : ArgList} -> (srcs, tgts : FIELDS args) -> FIELDS args
+(~|>) srcs tgts = TABULATE args $ \pos => srcs.LOOKUP pos -> tgts.LOOKUP pos
+
+public export
+(~>) : {args : ArgList} -> (srcs,tgts : Fields args) -> Fields args
+(~>) srcs tgts = MkFields $ srcs.fields ~|> tgts.fields
+
+
+public export
+MAP : {args : ArgList} -> {0 srcs, tgts : {0 arg : String} -> (pos : arg `Elem` args) -> Type} ->
+  (fs : {0 arg : String} -> (pos : arg `Elem` args) -> srcs pos -> tgts pos) ->
+  (xs : RECORD args $ TABULATE args srcs) -> RECORD args $ TABULATE args tgts
+MAP {args =    []     } fs xs      = ()
+MAP {args = arg:: args} fs (x, xs) = (fs Here x, MAP (\pos => fs $ There pos) xs)
+
+public export
+map : {args : ArgList} -> {0 srcs, tgts : {0 arg : String} -> (pos : arg `Elem` args) -> Type} ->
+  (fs : {0 arg : String} -> (pos : arg `Elem` args) -> srcs pos -> tgts pos) ->
+  (xs : Record args $ tabulate srcs) -> Record args $ tabulate tgts
+map fs = MkRecord . (MAP fs) . (.content)
+
+
+-- Natural to try to do these with `map`, but we don't want to
+-- restrict to `tabulate`d arguments
+public export
+(.APP) : {args : ArgList} -> {0 srcs, tgts : FIELDS args} ->
+  (funs : RECORD args $ (srcs ~|> tgts) {args}) -> RECORD args srcs -> RECORD args tgts
+funs       .APP {args =     []     }     xs  = ()
+(fun, funs).APP {args = arg :: args} (x, xs) = (fun x, funs.APP xs)
+
+public export
+(.app) : {args : ArgList} -> {0 srcs, tgts : Fields args} ->
+  (funs : Record args (srcs ~> tgts)) -> Record args srcs -> Record args tgts
+funs.app = MkRecord . funs.content.APP . (.content)
+
+public export
+SEQ : {args : ArgList} -> {0 flds : FIELDS args} -> {0 f : Type -> Type} -> Applicative f =>
+  RECORD args $ (f ||> flds) {args} -> f (RECORD args flds)
+SEQ {args =     []     } rec = pure rec
+SEQ {args = arg :: args} (av, rec) = MkPair <$> av <*> SEQ rec
+
+public export
+seq : {args : ArgList} -> {0 flds : Fields args} -> {0 f : Type -> Type} -> Applicative f =>
+  Record args (f |> flds)  -> f (Record args flds)
+seq rec = MkRecord <$> SEQ rec.content
+
 public export
 PartialRECORD : (args : ArgList) -> (flds : FIELDS args) -> Type
-PartialRECORD    []     flds = Unit
-PartialRECORD (x :: xs) flds = ?PartialRECORD_rhs_2
+PartialRECORD      []       flds = Unit
+PartialRECORD (arg :: args) flds = (Maybe (fst flds), PartialRECORD args (snd flds))
+
+public export
+record PartialRecord (args : ArgList) (flds : Fields args) where
+  constructor MkPartialRecord
+  content : PartialRECORD args flds.fields
