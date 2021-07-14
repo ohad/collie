@@ -1,0 +1,52 @@
+package collie
+-- version =
+authors = "Guillaume Xavier Allais and Ohad Kammar"
+-- maintainers =
+-- license =
+-- brief =
+-- readme =
+-- homepage =
+-- sourceloc =
+-- bugtracker =
+
+-- packages to add to search path
+depends = contrib
+
+-- modules to install
+modules
+  = Collie
+  , Collie.Options.Domain
+  , Collie.Options.Usual
+  , Collie.Modifiers
+  , Data.List.Fresh
+  , Data.List.Fresh.Elem
+  , Data.Record.Ordered
+  , Data.Magma
+
+-- main file (i.e. file to load at REPL)
+-- main =
+
+-- name of executable
+-- executable =
+-- opts =
+sourcedir = "src"
+-- builddir =
+-- outputdir =
+
+-- script to run before building
+-- prebuild =
+
+-- script to run after building
+-- postbuild =
+
+-- script to run after building, before installing
+-- preinstall =
+
+-- script to run after installing
+-- postinstall =
+
+-- script to run before cleaning
+-- preclean =
+
+-- script to run after cleaning
+-- postclean =
