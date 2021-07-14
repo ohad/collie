@@ -2,8 +2,8 @@
 ||| a fixed order, but must otherwise be distinct.
 module Data.Record.Ordered
 
-import Data.List.Fresh
-import Data.List.Fresh.Elem
+import public Data.List.Fresh
+import public Data.List.Fresh.Elem
 import Data.Fin
 
 -- TODO: move to an stdlib package

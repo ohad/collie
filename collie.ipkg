@@ -21,6 +21,7 @@ modules
   , Data.List.Fresh
   , Data.List.Fresh.Elem
   , Data.Record.Ordered
+  , Data.Record.Ordered.Properties
   , Data.Magma
 
 -- main file (i.e. file to load at REPL)
