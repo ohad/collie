@@ -69,7 +69,13 @@ public export
   Error $ RECORD args flds
 (q      , ps).UPDATE  Here p {mods = (MkFlag   _, mods)} = pure (p, ps)
 (Nothing, ps).UPDATE  Here p {mods = (MkOption _, mods)} = pure (p, ps)
-(Just  q, ps).UPDATE  Here p {mods = (MkOption _, mods)} = ?UPDATE_rhs_13
+(Just  q, ps).UPDATE  Here p {mods = (MkOption o, mods)} with (fst $ o.project "arguments")
+ (Just q, ps).UPDATE  Here p {mods = (MkOption o, mods)} | Some d
+   = throwE $ "MkOption \{arg} set twice"
+ (Just q, ps).UPDATE  Here p {mods = (MkOption o, mods)} | ALot ds
+   = let _ = openMagma $ Maybe.rawMagma ds in
+       pure (p <+> (Just q), ps)
+
 (q, ps).UPDATE (There pos) p
   -- We don't have eta for pairs, matching gets us unstuck
   {mods = (mod,mods)}

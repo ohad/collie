@@ -1,12 +1,14 @@
 module Data.Magma
 
+import Data.Maybe
+
 infixr 6 .*.
 
 public export
-interface RawMagma where
+record RawMagma where
   constructor MkRawMagma
   Carrier : Type
-  (.*.) : Carrier -> Carrier -> Carrier
+  Product : Carrier -> Carrier -> Carrier
 
 namespace List
   public export
@@ -22,3 +24,16 @@ namespace Unit
   public export
   rawMagma : RawMagma
   rawMagma = MkRawMagma Unit $ const $ const ()
+
+namespace Maybe
+  public export
+  rawMagma : RawMagma -> RawMagma
+  rawMagma magma = MkRawMagma (Maybe magma.Carrier)
+    (\mx, my => do
+    x <- mx
+    y <- my
+    pure (magma.Product x y))
+
+public export
+openMagma : (magma : RawMagma) -> Semigroup magma.Carrier
+openMagma magma = MkSemigroup magma.Product
