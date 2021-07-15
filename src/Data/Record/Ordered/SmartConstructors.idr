@@ -23,5 +23,6 @@ UPDATE (_, rec)  Here       v = (v, rec)
 UPDATE (w, rec) (There pos) v = (w, UPDATE rec pos v)
 
 public export
-(::=) : (recpos : (Record args flds, arg `Elem` args)) -> flds.lookup (snd recpos) -> Record args flds
+(::=) : (recpos : (Record args flds, arg `Elem` args)) ->
+  flds.lookup arg {pos = snd recpos} -> Record args flds
 (rec, pos) ::= v = MkRecord $ UPDATE rec.content pos v

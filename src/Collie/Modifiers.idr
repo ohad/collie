@@ -37,3 +37,12 @@ Modifiers = (args : ArgList ** Record args (toFields))
 public export
 noModifiers : Modifiers
 noModifiers = ([] ** [])
+
+public export
+ParsedModifier : Modifier arg -> Type
+ParsedModifier (MkFlag   flg) = Bool
+ParsedModifier (MkOption opt) = Maybe $ Carrier $ fst $ opt.project "arguments"
+
+public export
+ParsedModifiers : {args : _} -> (mods : Record args Modifiers.toFields) -> Type
+ParsedModifiers mods = Record args (TypeFields $ map (\_ => ParsedModifier) mods)

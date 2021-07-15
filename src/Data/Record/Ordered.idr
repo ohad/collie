@@ -39,8 +39,8 @@ public export
 (.LOOKUP) flds (There pos) = (snd flds).LOOKUP pos
 
 public export
-(.lookup) : {0 args : ArgList} -> (fs : Fields args) -> (pos : arg `Elem` args) -> Type
-(.lookup) flds pos = flds.fields.LOOKUP pos
+(.lookup) : {0 args : ArgList} -> (fs : Fields args) -> (arg : String) -> {auto pos : arg `Elem` args} -> Type
+(.lookup) flds _ {pos} = flds.fields.LOOKUP pos
 
 namespace Field
   public export
@@ -176,14 +176,22 @@ public export
 
 
 public export
-(.project) : (rec : Record args flds) -> (pos : arg `Elem` args) -> flds.lookup pos
-rec.project pos = rec.content.PROJECT pos
+(.project) : (rec : Record args flds) -> (0 arg : String) -> {auto pos : arg `Elem` args} ->
+  flds.lookup arg {pos}
+rec.project _ {pos} = rec.content.PROJECT pos
 
 public export
 (.PROJECT') : {0 flds : {0 arg : String} -> (pos : arg `Elem` args) -> Type} ->
   (rec : RECORD args (TABULATE args flds)) -> (pos : arg `Elem` args) -> flds pos
 (val, rec).PROJECT'  Here       = val
 (val, rec).PROJECT' (There pos) = rec.PROJECT' pos
+
+public export
+(.project') :
+  {0 flds : {0 arg : String} -> (pos : arg `Elem` args) -> Type} ->
+  (rec : Record args (tabulate flds)) ->
+  (0 arg : String) ->  {auto pos : arg `Elem` args} -> flds pos
+rec.project' _ {pos} = rec.content.PROJECT' pos
 
 -- A record of Types encodes a Fields, allowing us to type nested records
 
@@ -205,7 +213,7 @@ TABULATE {args = fld :: flds} vals = (vals Here, TABULATE (\u => vals (There u))
 
 public export
 tabulate : {args : ArgList} -> {0 flds : Fields args} ->
-  (vals : {0 arg : String} -> (pos : arg `Elem` args) -> flds.lookup pos) ->
+  (vals : {0 arg : String} -> (pos : arg `Elem` args) -> flds.lookup arg {pos}) ->
   Record args flds
 tabulate = MkRecord . TABULATE
 
