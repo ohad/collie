@@ -41,7 +41,7 @@ record Command (name : String) where
   constructor MkCommand
   description : String
   subcommands : SubCommands
-  modifiers : Modifiers
+  modifiers : Fields Modifier
   arguments : Arguments
 
 SubCommands = Exists \names => Commands names
@@ -49,7 +49,8 @@ SubCommands = Exists \names => Commands names
 public export
 record Commands (Names : ArgList) where
   constructor (.commands)
-  cols : Record Names (tabulate CommandRecordTabs)
+  cols : Record Names (tabulate \arg => const (Command arg))
+{-
 
 public export
 noSubCommands : SubCommands
@@ -181,3 +182,4 @@ parseArgument (MkCommand description (Evidence names cs.commands) (args ** mods)
   | SubCommand _ _ => throwE $ "Found an argument for command \{arg} " ++
                                "with subcommand \{description}"
   TheCommand mods' <$> updateArgument d p args' x
+-}

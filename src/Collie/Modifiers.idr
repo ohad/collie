@@ -2,60 +2,50 @@ module Collie.Modifiers
 
 import Data.Magma
 import public Data.Record.Ordered
-import public Data.Record.Ordered.SmartConstructors
 import public Collie.Options.Domain
+import Decidable.Decidable.Extra
+import Data.DPair
 
 public export
-Flag : Fields ["description"]
-Flag = TypeFields $ [].insert' Before _ String
+Flag : Fields Type
+Flag = [("description", String), ("default", Bool)]
 
 public export
-Option : Fields ["description", "arguments"]
-Option = (Flag).insert AfterHere _ (d : Domain ** Parser d)
+record Parseducer where
+  constructor MkParseducer
+  domain : Domain
+  parser : Parser d
 
 public export
-data Modifier : (name : String) -> Type where
-  MkFlag   : Record _ Flag   -> Modifier name
-  MkOption : Record _ Option -> Modifier name
+Option : Fields Type
+Option = [("description", String), ("arguments", Parseducer)]
 
 public export
-flag : String -> Modifier name
-flag str = MkFlag $ [].insert' Before "description" str
+data Modifier
+  = MkFlag   (Record Prelude.id Flag  )
+  | MkOption (Record Prelude.id Option)
 
 public export
-option : String -> (d : Domain ** Parser d) -> Modifier name
-option str parser = MkOption $ ([].insert' Before    "description" str)
-                                  .insert  AfterHere "arguments" parser
+flag : String -> {default False defaultVal : Bool} -> Modifier
+flag desc = MkFlag $ MkRecord [desc, defaultVal]
 
 public export
-toFieldsTabs : {args : ArgList} -> (pos : arg `Elem` args) -> Type
-toFieldsTabs = \pos => Modifier (args.recall pos)
+option : String -> Parseducer -> Modifier
+option desc ducer = MkOption $ MkRecord [desc, ducer]
 
 public export
-toFIELDS : {args : ArgList} -> FIELDS args
-toFIELDS = TABULATE args toFieldsTabs
-
-public export
-toFields : {args : ArgList} -> Fields args
-toFields = tabulate toFieldsTabs
-
-public export
-Modifiers : Type
-Modifiers = (args : ArgList ** Record args (toFields))
-
-public export
-noModifiers : Modifiers
-noModifiers = ([] ** [])
-
-public export
-ParsedModifier : Modifier arg -> Type
+ParsedModifier : Modifier -> Type
 ParsedModifier (MkFlag   flg) = Bool
-ParsedModifier (MkOption opt) = Maybe $ Carrier $ fst $ opt.project "arguments"
+ParsedModifier (MkOption opt) = Carrier (opt.project "arguments").domain
 
+public export
+ParsedModifiers : (mods : Record (const Modifier) flds) -> Type
+ParsedModifiers mods = Record (\a => mods.project ?h1) flds
+
+{-
 public export
 ParsedModifiers : {args : _} -> (mods : Record args Modifiers.toFields) -> Type
 ParsedModifiers mods = Record args (TypeFields $ map (\_ => ParsedModifier) mods)
-
 
 public export
 (.UPDATE) : {args : _} ->
@@ -91,3 +81,4 @@ ps.update arg {pos} p =
   -- Our applicative doesn't seem dependent enough
   do res <- ps.content.UPDATE pos p
      pure $ MkRecord res
+-}

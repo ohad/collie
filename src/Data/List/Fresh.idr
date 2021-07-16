@@ -29,7 +29,7 @@ x # (y :: xs) {neq} = (x `neq` y , (#) {neq} x xs)
 
 
 parameters {0 A : Type} {0 Aneq : Rel A} {0 B : Type} {0 Bneq : Rel B} (F : A -> B)
-  (Injectivity : {x,y : A} -> x `Aneq` y -> F x `Bneq` F y)
+  (Injectivity : (x,y : A) -> x `Aneq` y -> F x `Bneq` F y)
 
   public export
   map : FreshList A Aneq -> FreshList B Bneq
@@ -43,7 +43,7 @@ parameters {0 A : Type} {0 Aneq : Rel A} {0 B : Type} {0 Bneq : Rel B} (F : A ->
   mapFreshness     []              _
     = ()
   mapFreshness ((y :: ys) {fresh}) (x_fresh_y, x_fresh_ys)
-    = (Injectivity x_fresh_y, mapFreshness ys x_fresh_ys)
+    = (Injectivity _ _ x_fresh_y, mapFreshness ys x_fresh_ys)
 
 namespace View
   public export
