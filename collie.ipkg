@@ -18,6 +18,7 @@ modules
   , Collie.Options.Domain
   , Collie.Options.Usual
   , Collie.Modifiers
+  , Collie.Core
   , Data.List.Fresh
   , Data.List.Fresh.Elem
   , Data.Record.Ordered
