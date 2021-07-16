@@ -7,8 +7,9 @@
 module Data.List.Fresh
 
 import public Control.Relation
+import public Syntax.WithProof
 
-infix 4 #
+infix 4 #, #?
 
 public export
 data FreshList : (a : Type) -> (neq : Rel a) -> Type
@@ -181,7 +182,24 @@ filterFreshness  pred (x :: xs) (y_neq_x, y_fresh_xs) with (pred x)
  filterFreshness pred (x :: xs) (y_neq_x, y_fresh_xs) | True
    = (y_neq_x, filterFreshness pred xs y_fresh_xs)
 
+public export
+decideFreshness : (x : a) -> (decide : (y : a) -> Dec (x `neq` y)) -> (ys : FreshList a neq)
+  -> Dec (x # ys)
+decideFreshness x decide    []     = Yes ()
+decideFreshness x decide (y :: ys) = case decide y of
+  No  x_stale_y => No $ x_stale_y . fst
+  Yes x_fresh_y    => case decideFreshness x decide ys of
+    Yes x_fresh_ys => Yes (x_fresh_y, x_fresh_ys)
+    No  x_stale_ys => No $ x_stale_ys . snd
+
 namespace String
   public export
   (#) : (s,t : String) -> Type
-  s # t = ((s == t) === False , (t == s) === False)
+  s # t = ((s == t) === False)
+
+  %hint
+  public export
+  (#?) : (s,t : String) -> Dec (s # t)
+  s  #? t = case (@@(s == t)) of
+    (False ** prf) => Yes prf
+    (True  ** prf) => No $ \prf' => absurd $ trans (sym prf) prf'

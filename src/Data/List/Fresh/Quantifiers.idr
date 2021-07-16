@@ -23,12 +23,12 @@ namespace All
       All p ((x :: xs) {fresh})
 
 public export
-lookupWithProof : {0 xs : FreshList a neq} -> (pos : Any p xs) -> Exists p
-lookupWithProof (Here  val) = Evidence _ val
+lookupWithProof : {xs : FreshList a neq} -> (pos : Any p xs) -> (x : a **  p x)
+lookupWithProof (Here  val) = (_ ** val)
 lookupWithProof (There pos) = lookupWithProof pos
 
-public export 0
-lookup : {0 xs : FreshList a neq} -> (pos : Any p xs) -> a
+public export
+lookup : {xs : FreshList a neq} -> (pos : Any p xs) -> a
 lookup = fst . lookupWithProof
 
 infixr 4 !!
@@ -67,3 +67,10 @@ any decide (x :: xs) = case decide x of
                  No  not_xs => No \case
                    Here val  => not_x val
                    There pos => not_xs pos
+
+public export
+(.update) : Applicative f => {0 xs : FreshList a neq} -> (ps : All p xs) ->
+  (pos : Any q xs) ->
+  (action : p (lookup pos) -> f (p (lookup pos))) -> f (All p xs)
+(val :: vals).update (Here  _  ) action = (\x  => x   :: vals) <$> action val
+(val :: vals).update (There pos) action = (\xs => val :: xs  ) <$> vals.update pos action

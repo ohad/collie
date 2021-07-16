@@ -17,9 +17,9 @@ Fields : Type -> Type
 Fields a = FreshList (String, a) ((#) `on` fst)
 
 public export
-record Record {0 A : Type} (0 f : A -> Type) (0 flds : Fields A) where
+record Record {0 A : Type} (0 F : A -> Type) (0 Flds : Fields A) where
   constructor MkRecord
-  content : All (f . Builtin.snd) flds
+  content : All (F . Builtin.snd) Flds
 
 public export 0
 field : {flds : Fields a} -> (pos : Any p flds) -> a

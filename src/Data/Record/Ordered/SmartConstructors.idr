@@ -7,9 +7,18 @@ import Data.Record.Ordered
 
 
 public export
-Nil : Record [] flds
-Nil = MkRecord ()
+Nil : Record f []
+Nil = MkRecord []
 
+public export
+(::) : {x : a} -> {flds : Fields a} ->
+  (namearg : (String, f x)) ->
+   (rec : Record f flds) ->
+  {auto fresh : IsYes (decideFreshness (fst namearg, x) (\y => (fst namearg #? (fst y))) flds)} ->
+  Record f (((fst namearg, x) :: flds) {fresh = toWitness fresh})
+(name, arg) :: rec = MkRecord ((arg :: rec.content) {fresh = toWitness fresh})
+
+{-
 infixr 5 ::=
 
 public export
@@ -26,3 +35,4 @@ public export
 (::=) : (recpos : (Record args flds, arg `Elem` args)) ->
   flds.lookup arg {pos = snd recpos} -> Record args flds
 (rec, pos) ::= v = MkRecord $ UPDATE rec.content pos v
+-}

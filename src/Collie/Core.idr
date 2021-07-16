@@ -24,75 +24,34 @@ ParsedArguments : (d : Domain ** Parser d) -> Type
 ParsedArguments (d ** p) = Maybe $ Carrier d
 
 public export
-data Command : (name : String) -> Type
-
-public export
-SubCommands : Type
-
-public export
-data Commands : (names : ArgList) -> Type
-
-public export 0
-CommandRecordTabs : {0 arg : String} -> (pos : arg `Elem` args) -> Type
-CommandRecordTabs {arg} _ = Command arg
-
-public export
-record Command (name : String) where
+record Command where
   constructor MkCommand
+  name        : String
   description : String
-  subcommands : SubCommands
+  subcommands : Fields Command
   modifiers : Fields Modifier
   arguments : Arguments
 
-SubCommands = Exists \names => Commands names
-
 public export
-record Commands (Names : ArgList) where
-  constructor (.commands)
-  cols : Record Names (tabulate \arg => const (Command arg))
-{-
-
-public export
-noSubCommands : SubCommands
-noSubCommands = Evidence _ [].commands
-
-public export
-basic : {arg : String} -> Arguments -> Command arg
+basic : {arg : String} -> Arguments -> Command
 basic args = MkCommand
-  { description = arg
-  , subcommands = noSubCommands
-  , modifiers   = noModifiers
+  { name = arg
+  , description = ""
+  , subcommands = []
+  , modifiers   = []
   , arguments   = args
   }
 
 public export
-record CLI where
-  constructor MkCLI
-  name : String
-  exec : Command name
-
-public export
-data ParsedCommand : (c : Command arg) -> Type where
-  TheCommand :
-    {0 descr : String} -> {subs : SubCommands} ->
-    {0 modNames : ArgList} ->
-    {0 mods : Record modNames Modifiers.toFields} ->
+data ParsedCommand : (c : Command) -> Type where
+  Here :
     (parsedMods : ParsedModifiers mods) ->
-    {args : (d : Domain ** Parser d)} ->
     (ParsedArgs : ParsedArguments args) ->
-    ParsedCommand (MkCommand descr subs (modNames ** mods) args)
-
-  SubCommand :
-    {0 descr : String} -> {0 sub : String} -> {0 subs : ArgList} ->
-    (pos : sub `Elem` subs) -> {cs : Record subs $ tabulate CommandRecordTabs} ->
-    {mods : (names : ArgList ** Record names Modifiers.toFields)} ->
-    (parsedSub : ParsedCommand $ cs.project' {flds = CommandRecordTabs} sub {pos}) ->
-    {args : (d : Domain ** Parser d)} ->
-    ParsedCommand (MkCommand descr (Evidence subs cs.commands) mods args)
-
-public export
-ParsedInterface : CLI -> Type
-ParsedInterface iface = ParsedCommand (exec iface)
+    ParsedCommand (MkCommand cmdName descr subs mods args)
+  There :
+    (pos : Any p cs) ->
+    (parsedSub : ParsedCommand $ field pos) ->
+    ParsedCommand (MkCommand cmdName descr cs mods args)
 
 {-
   Some agda syntax magic goes here, so that:
@@ -109,6 +68,7 @@ ParsedInterface iface = ParsedCommand (exec iface)
   to appear in patterns, I think.
 -}
 
+{-
 public export
 updateArgument : (d : Domain) -> (p : Parser d) -> (ps : ParsedArguments (d ** p)) ->
   String -> Error $ ParsedArguments (d ** p)
