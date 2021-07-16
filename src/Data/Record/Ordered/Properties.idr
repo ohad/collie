@@ -10,5 +10,5 @@ lookupTABULATE flds (There pos) = lookupTABULATE (\u => flds (There u)) pos
 
 export
 lookupTabulate : {args : ArgList} -> (flds : {0 arg : String} -> (pos : arg `Elem` args) -> Type) ->
-  (pos : arg `Elem` args) -> (tabulate flds).lookup pos = flds pos
+  (pos : arg `Elem` args) -> (tabulate flds).lookup arg {pos} = flds pos
 lookupTabulate = lookupTABULATE
