@@ -19,3 +19,8 @@ public export
 (.recall) : (xs : FreshList a neq) -> (pos : x `Elem` xs) -> a
 (x :: xs).recall Here = x
 (x :: xs).recall (There pos) = xs.recall pos
+
+public export
+recallId : (xs : FreshList a neq) -> (pos : x `Elem` xs) -> xs.recall pos = x
+recallId (x :: xs) Here = Refl
+recallId (x :: xs) (There pos) = recallId xs pos

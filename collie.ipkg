@@ -19,6 +19,7 @@ modules
   , Collie.Options.Usual
   , Collie.Modifiers
   , Collie.Core
+  , Collie.Parser
   , Data.List.Fresh
   , Data.List.Fresh.Elem
   , Data.Record.Ordered

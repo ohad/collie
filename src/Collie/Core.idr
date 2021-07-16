@@ -119,9 +119,9 @@ updateArgument (ALot ds) p ps x = let _ = openMagma $ Maybe.rawMagma ds in
   pure (Just p <+> ps)
 
 public export
-parserArguments : (p : (d : Domain ** Parser d)) -> List String
+parseArguments : (p : (d : Domain ** Parser d)) -> List String
   -> ParsedArguments p -> Error $ ParsedArguments p
-parserArguments p str dft = foldl (cons p) (pure dft) str
+parseArguments p str dft = foldl (cons p) (pure dft) str
   where
   cons : (p : (d : Domain ** Parser d)) ->
     Error (ParsedArguments p) -> String -> Error (ParsedArguments p)
@@ -151,8 +151,8 @@ DUMMY (arg :: args) (MkOption _, mods) = (Nothing, DUMMY args mods)
 
 public export
 dummy : {args : ArgList} -> {mods : Record args (tabulate ModifierRecordTabs)} ->
-  Record args (TypeFields $ map DummyRecordTabs mods)
-dummy = MkRecord $ DUMMY _ _
+  Record args (TypeFields $ map (\pos => DummyRecordTabs pos) mods)
+dummy {args} {mods} = MkRecord $ DUMMY args mods.content
 
 public export
 parseModifier : {arg : String} -> (c : Command arg) -> {x : String} ->
