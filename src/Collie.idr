@@ -16,6 +16,8 @@ import public Data.Vect
 import public Data.DPair
 import public Data.Magma
 
+import public Syntax.WithProof
+
 %default total
 
 public export
@@ -81,7 +83,7 @@ data ParsedCommand : (c : Command arg) -> Type where
     {0 mods : Record modNames Modifiers.toFields} ->
     (parsedMods : ParsedModifiers mods) ->
     {args : (d : Domain ** Parser d)} ->
-    (ParsedArgs : ParsedArgument args) ->
+    (ParsedArgs : ParsedArguments args) ->
     ParsedCommand (MkCommand descr subs (modNames ** mods) args)
 
   SubCommand :
@@ -136,3 +138,51 @@ parserArguments p str dft = foldl (cons p) (pure dft) str
     w <- parser str
     pure let _ = openMagma ds in
       Just (v <+> w)
+
+public export 0
+ModifierRecordTabs : {0 arg : String} -> (pos : arg `Elem` args) -> Type
+ModifierRecordTabs {arg} _ = Modifier arg
+
+public export 0
+DummyRecordTabs : {0 arg : String} -> (pos : arg `Elem` args) -> Modifier arg -> Type
+DummyRecordTabs {arg} pos = ParsedModifier {arg}
+
+public export
+DUMMY : (args : ArgList) -> (mods : RECORD args (TABULATE args ModifierRecordTabs)) ->
+  RECORD args (TypeFIELDS args $ MAP {args} DummyRecordTabs mods)
+DUMMY      []                    mods  = ()
+DUMMY (arg :: args) (MkFlag   _, mods) = (False, DUMMY args mods)
+DUMMY (arg :: args) (MkOption _, mods) = (Nothing, DUMMY args mods)
+
+public export
+dummy : {args : ArgList} -> {mods : Record args (tabulate ModifierRecordTabs)} ->
+  Record args (TypeFields $ map DummyRecordTabs mods)
+dummy = MkRecord $ DUMMY _ _
+
+public export
+parseModifier : {arg : String} -> (c : Command arg) -> {x : String} ->
+  (recyxs, recxs : Error (ParsedCommand c)) ->
+  (pos : x `Elem` c.modifiers.fst) -> Error $ ParsedCommand c
+parseModifier (MkCommand description (Evidence names cs.commands) (args ** mods) arguments)
+  {x} recyxs recxs pos = do
+  TheCommand mods' args <- recyxs
+  | SubCommand _ _ => throwE $ "Found a MkFlag for command \{arg} " ++
+                               "with subcommand \{description}"
+  p <- case @@(the (Modifier _) $ mods.project' x {pos}) of
+        (MkFlag   flg ** prf) => pure $ replace {p = ParsedModifier} (sym prf) $
+                                        True
+        (MkOption opt ** prf) => do
+          u <- (opt.project "arguments").snd x
+          pure $ replace {p = ParsedModifier} (sym prf)
+               $ Just u
+  (\m => TheCommand m args) <$> (mods'.update x p)
+
+public export
+parseArgument : {arg : String} -> (c : Command arg) -> Error (ParsedCommand c) ->
+  String -> Error $ ParsedCommand c
+parseArgument (MkCommand description (Evidence names cs.commands) (args ** mods) (d ** p))
+  recyxs x = do
+  TheCommand mods' args' <- recyxs
+  | SubCommand _ _ => throwE $ "Found an argument for command \{arg} " ++
+                               "with subcommand \{description}"
+  TheCommand mods' <$> updateArgument d p args' x
