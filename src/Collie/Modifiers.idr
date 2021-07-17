@@ -2,92 +2,58 @@ module Collie.Modifiers
 
 import Data.Magma
 import public Data.Record.Ordered
-import public Data.Record.Ordered.SmartConstructors
 import public Collie.Options.Domain
+import Decidable.Decidable.Extra
+import Data.DPair
 
 public export
-Flag : Fields ["description"]
-Flag = TypeFields $ [].insert' Before _ String
+Flag : Fields Type
+Flag = [("description", String), ("default", Bool)]
 
 public export
-Option : Fields ["description", "arguments"]
-Option = (Flag).insert AfterHere _ (d : Domain ** Parser d)
+Option : Fields Type
+Option = [("description", String), ("arguments", Arguments)]
 
 public export
-data Modifier : (name : String) -> Type where
-  MkFlag   : Record _ Flag   -> Modifier name
-  MkOption : Record _ Option -> Modifier name
+data Modifier
+  = MkFlag   (Record Prelude.id Flag  )
+  | MkOption (Record Prelude.id Option)
 
 public export
-flag : String -> Modifier name
-flag str = MkFlag $ [].insert' Before "description" str
+flag : String -> {default False defaultVal : Bool} -> Modifier
+flag desc = MkFlag $ MkRecord [desc, defaultVal]
 
 public export
-option : String -> (d : Domain ** Parser d) -> Modifier name
-option str parser = MkOption $ ([].insert' Before    "description" str)
-                                  .insert  AfterHere "arguments" parser
+option : String -> Arguments -> Modifier
+option desc ducer = MkOption $ MkRecord [desc, ducer]
 
 public export
-toFieldsTabs : {args : ArgList} -> (pos : arg `Elem` args) -> Type
-toFieldsTabs = \pos => Modifier (args.recall pos)
-
-public export
-toFIELDS : {args : ArgList} -> FIELDS args
-toFIELDS = TABULATE args toFieldsTabs
-
-public export
-toFields : {args : ArgList} -> Fields args
-toFields = tabulate toFieldsTabs
-
-public export
-Modifiers : Type
-Modifiers = (args : ArgList ** Record args (toFields))
-
-public export
-noModifiers : Modifiers
-noModifiers = ([] ** [])
-
-public export
-ParsedModifier : Modifier arg -> Type
+ParsedModifier : Modifier -> Type
 ParsedModifier (MkFlag   flg) = Bool
-ParsedModifier (MkOption opt) = Maybe $ Carrier $ fst $ opt.project "arguments"
+ParsedModifier (MkOption opt) = Carrier (opt.project "arguments").domain
 
 public export
-ParsedModifiers : {args : _} -> (mods : Record args Modifiers.toFields) -> Type
-ParsedModifiers mods = Record args (TypeFields $ map (\_ => ParsedModifier) mods)
-
-
-public export
-(.UPDATE) : {args : _} ->
-  {mods : RECORD args (Modifiers.toFIELDS {args})} ->
-  let flds : FIELDS args
-      flds = TypeFIELDS args $ MAP (\u => ParsedModifier) mods
-  in
-  (ps : RECORD args flds) ->
-  {0 arg : String} -> (pos : arg `Elem` args) ->
-  (p : ParsedModifier (mods.PROJECT' {flds = Modifiers.toFieldsTabs} pos)) ->
-  Error $ RECORD args flds
-(q      , ps).UPDATE  Here p {mods = (MkFlag   _, mods)} = pure (p, ps)
-(Nothing, ps).UPDATE  Here p {mods = (MkOption _, mods)} = pure (p, ps)
-(Just  q, ps).UPDATE  Here p {mods = (MkOption o, mods)} with (fst $ o.project "arguments")
- (Just q, ps).UPDATE  Here p {mods = (MkOption o, mods)} | Some d
-   = throwE $ "MkOption \{arg} set twice"
- (Just q, ps).UPDATE  Here p {mods = (MkOption o, mods)} | ALot ds
-   = let _ = openMagma $ Maybe.rawMagma ds in
-       pure (p <+> (Just q), ps)
-
-(q, ps).UPDATE (There pos) p
-  -- We don't have eta for pairs, matching gets us unstuck
-  {mods = (mod,mods)}
-  = (q,) <$> ps.UPDATE pos p
+ParsedModifiers : (mods : Fields Modifier) -> Type
+ParsedModifiers mods = Record (Maybe . ParsedModifier) mods
 
 public export
-(.update) : {args : _} -> {mods : Record args Modifiers.toFields} ->
-  (ps : ParsedModifiers mods) ->
-  (0 arg : String) -> {auto pos : arg `Elem` args} ->
-  (p : ParsedModifier (mods.project' {args} {flds = Modifiers.toFieldsTabs} arg {pos})) ->
-  Error (ParsedModifiers mods)
-ps.update arg {pos} p =
-  -- Our applicative doesn't seem dependent enough
-  do res <- ps.content.UPDATE pos p
-     pure $ MkRecord res
+updateModifier : (name : String) -> {mod : Modifier} ->
+  (new : ParsedModifier mod) ->
+  (old : Maybe (ParsedModifier mod)) -> Error (Maybe $ ParsedModifier mod)
+updateModifier  name                      new Nothing    = pure $ Just new
+{- TODO: currently, overwrite previous flag, but we can do something
+better here: customise the behaviour, or parameterise by a partial
+monoid -}
+updateModifier  name {mod = MkFlag   flg} new (Just old) = pure $ Just new
+updateModifier  name {mod = MkOption opt} new (Just old) with ((opt.project "arguments").domain)
+ updateModifier name {mod = MkOption opt} new (Just old) | Some d
+   = throwE $ "MkOption \{name} set twice"
+ updateModifier name {mod = MkOption opt} new (Just old) | ALot ds
+   = let _ = openMagma ds in
+     pure $ Just $ old <+> new
+
+public export
+(.update) : {mods : Fields Modifier} -> (ps : ParsedModifiers mods) ->
+  {name : String} -> (pos : name `IsField` mods) ->
+  (p : ParsedModifier (field pos)) -> Error (ParsedModifiers mods)
+ps.update pos p = MkRecord <$> ps.content.update pos (updateModifier name p)

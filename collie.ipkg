@@ -22,6 +22,7 @@ modules
   , Collie.Parser
   , Data.List.Fresh
   , Data.List.Fresh.Elem
+  , Data.List.Fresh.Quantifiers
   , Data.Record.Ordered
   , Data.Record.Ordered.Properties
   , Data.Record.Ordered.SmartConstructors

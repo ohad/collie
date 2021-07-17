@@ -29,3 +29,9 @@ Carrier = elimDomain id (\ds => ds.Carrier)
 public export
 Parser : Domain -> Type
 Parser d = String -> Error $ Carrier d
+
+public export
+record Arguments where
+  constructor MkArguments
+  domain : Domain
+  parser : Parser domain
