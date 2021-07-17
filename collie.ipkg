@@ -20,6 +20,7 @@ modules
   , Collie.Modifiers
   , Collie.Core
   , Collie.Parser
+  , Collie.Usage
   , Data.List.Fresh
   , Data.List.Fresh.Elem
   , Data.List.Fresh.Quantifiers

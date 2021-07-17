@@ -192,6 +192,16 @@ decideFreshness x decide (y :: ys) = case decide y of
     Yes x_fresh_ys => Yes (x_fresh_y, x_fresh_ys)
     No  x_stale_ys => No $ x_stale_ys . snd
 
+public export
+foldl : (f : b -> a -> b) -> b -> FreshList a neq -> b
+foldl f x [] = x
+foldl f x (y :: ys) = foldl f (x `f` y) ys
+
+public export
+foldr : (f : a -> b -> b) -> b -> FreshList a neq -> b
+foldr f x [] = x
+foldr f x (val :: vals) = (val `f` foldr f x vals)
+
 namespace String
   public export
   (#) : (s,t : String) -> Type

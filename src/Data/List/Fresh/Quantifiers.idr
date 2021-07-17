@@ -85,3 +85,14 @@ public export
 tabulate : {xs : FreshList a neq} -> (f : (x : a) -> p x) -> All p xs
 tabulate {xs =   []   } f = []
 tabulate {xs = x :: xs} f = f x :: tabulate f
+
+namespace All
+  public export
+  foldl : (f : b -> a -> b) -> b -> All {neq} (const a) xs -> b
+  foldl f x [] = x
+  foldl f x (val :: vals) = foldl f (x `f` val) vals
+
+  public export
+  foldr : (f : a -> b -> b) -> b -> All {neq} (const a) xs -> b
+  foldr f x [] = x
+  foldr f x (val :: vals) = (val `f` foldr f x vals)

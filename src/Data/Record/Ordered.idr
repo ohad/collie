@@ -59,6 +59,10 @@ map : (f : a -> b) -> Fields a -> Fields b
 map f = Data.List.Fresh.map (map f) (\(_,_), (_,_) => id)
 
 public export
+foldl : (f : b -> a -> b) -> b -> Record (const a) flds -> b
+foldl f x = foldl f x . content
+
+public export
 TypeFields : {flds : Fields a} -> (rec : Record (const Type) flds ) -> Fields Type
 TypeFields rec = Fresh.map (\x => (Builtin.fst x.fst, x.snd))
     (\((_,_) ** _),((_,_) ** _) => id)

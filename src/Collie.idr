@@ -6,6 +6,8 @@
 module Collie
 
 import public Collie.Core
+import public Collie.Parser
+import public Collie.Usage
 
 import public Collie.Options.Domain
 import public Collie.Options.Usual
@@ -13,6 +15,7 @@ import public Collie.Modifiers
 import public Data.Record.Ordered
 import public Data.Record.Ordered.SmartConstructors
 import public Data.Record.Ordered.Properties
+
 
 import public Data.Vect
 import public Data.DPair
