@@ -46,12 +46,17 @@ public export
 data ParsedCommand : (c : Command) -> Type where
   Here :
     (parsedMods : ParsedModifiers mods) ->
-    (ParsedArgs : ParsedArguments args) ->
+    (parsedArgs : ParsedArguments args) ->
     ParsedCommand (MkCommand cmdName descr subs mods args)
   There :
     (pos : Any p cs) ->
     (parsedSub : ParsedCommand $ field pos) ->
     ParsedCommand (MkCommand cmdName descr cs mods args)
+
+public export
+(.deref) : {c : Command} -> ParsedCommand c -> Command
+(Here _ _).deref = c
+(There _ parsedSub).deref = parsedSub.deref
 
 {-
   Some agda syntax magic goes here, so that:
@@ -87,26 +92,24 @@ public export
   Error $ ParsedArguments args
 args.parse old = foldl (\u,s => do {acc <- u; acc.update s}) (pure old)
 
-
 public export
-dummy : {flds : Fields Arguments} -> Record (const Modifier) flds
-dummy {flds = []} = MkRecord []
-dummy {flds = (_, mod) :: xs} = ?dummy_rhs__
+initNothing : {flds : Fields a} -> Record (Maybe . f) flds
+initNothing = MkRecord $ tabulate (\_ => Nothing)
+
+-- TODO: Come back to here later
+{-
+public export
+parseModifier : {c : Command} -> (pos : Any p c.modifiers) ->
+  (recyxs : ParsedCommand c) -> Error $ ParsedCommand c
+parseModifier pos (There pos' parsedSub)
+  = throwE $ "Found a {TODO: print modifier in (field pos')} for command \{c.name} " ++
+             "with subcommand \{parsedSub.deref.name}"
+parseModifier pos (Here parsedMods parsedArgs) =
+  (\m => Here m parsedArgs) <$> (parsedMods.update
+-}
+
 
 {-
-
-public export
-DUMMY : (args : ArgList) -> (mods : RECORD args (TABULATE args ModifierRecordTabs)) ->
-  RECORD args (TypeFIELDS args $ MAP {args} DummyRecordTabs mods)
-DUMMY      []                    mods  = ()
-DUMMY (arg :: args) (MkFlag   _, mods) = (False, DUMMY args mods)
-DUMMY (arg :: args) (MkOption _, mods) = (Nothing, DUMMY args mods)
-
-public export
-dummy : {args : ArgList} -> {mods : Record args (tabulate ModifierRecordTabs)} ->
-  Record args (TypeFields $ map (\pos => DummyRecordTabs pos) mods)
-dummy {args} {mods} = MkRecord $ DUMMY args mods.content
-
 public export
 parseModifier : {arg : String} -> (c : Command arg) -> {x : String} ->
   (recyxs, recxs : Error (ParsedCommand c)) ->
