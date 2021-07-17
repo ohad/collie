@@ -16,12 +16,12 @@ import public Syntax.WithProof
 %default total
 
 public export
-ParsedArgument : (d : Domain ** Parser d) -> Type
-ParsedArgument (d ** p) = Carrier d
+ParsedArgument : Arguments -> Type
+ParsedArgument ducer = Carrier ducer.domain
 
 public export
-ParsedArguments : (d : Domain ** Parser d) -> Type
-ParsedArguments (d ** p) = Maybe $ Carrier d
+ParsedArguments : Arguments -> Type
+ParsedArguments ducer = Maybe $ Carrier ducer.domain
 
 public export
 record Command where
@@ -67,6 +67,20 @@ data ParsedCommand : (c : Command) -> Type where
   These can't be just smart constructors though, since they're meant
   to appear in patterns, I think.
 -}
+
+-- Logic ought to be shared logic with Modifiers.update
+{-
+public export
+updateArgument : {ducer : Parseducer} -> (ps : ParsedArguments ducer) ->
+  String -> Error $ ParsedArguments ducer
+updateArgument (Some d ** parser)  p Nothing _ = throwE "Too many arguments: only one expected"
+updateArgument (Some d ** parser)  p (Just y) x = Just <$> p x
+updateArgument (ALot ds ** parser) p ps x = let _ = openMagma $ Maybe.rawMagma ds in
+  do
+  p <- p x
+  pure (Just p <+> ps)
+-}
+
 
 {-
 public export

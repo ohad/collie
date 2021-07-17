@@ -11,14 +11,8 @@ Flag : Fields Type
 Flag = [("description", String), ("default", Bool)]
 
 public export
-record Parseducer where
-  constructor MkParseducer
-  domain : Domain
-  parser : Parser d
-
-public export
 Option : Fields Type
-Option = [("description", String), ("arguments", Parseducer)]
+Option = [("description", String), ("arguments", Arguments)]
 
 public export
 data Modifier
@@ -30,7 +24,7 @@ flag : String -> {default False defaultVal : Bool} -> Modifier
 flag desc = MkFlag $ MkRecord [desc, defaultVal]
 
 public export
-option : String -> Parseducer -> Modifier
+option : String -> Arguments -> Modifier
 option desc ducer = MkOption $ MkRecord [desc, ducer]
 
 public export
