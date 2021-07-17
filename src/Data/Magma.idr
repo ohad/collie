@@ -29,10 +29,11 @@ namespace Maybe
   public export
   rawMagma : RawMagma -> RawMagma
   rawMagma magma = MkRawMagma (Maybe magma.Carrier)
-    (\mx, my => do
-    x <- mx
-    y <- my
-    pure (magma.Product x y))
+    (\case
+       Nothing => id
+       Just x => \case
+         Nothing => Just x
+         Just y => Just (magma.Product x y))
 
 public export
 openMagma : (magma : RawMagma) -> Semigroup magma.Carrier
