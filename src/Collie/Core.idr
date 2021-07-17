@@ -32,6 +32,9 @@ record Command where
   modifiers : Fields Modifier
   arguments : Arguments
 
+
+
+
 public export
 basic : {arg : String} -> Arguments -> Command
 basic args = MkCommand
@@ -43,20 +46,27 @@ basic args = MkCommand
   }
 
 public export
-data ParsedCommand : (c : Command) -> Type where
-  Here :
-    (parsedMods : ParsedModifiers mods) ->
-    (parsedArgs : ParsedArguments args) ->
-    ParsedCommand (MkCommand cmdName descr subs mods args)
+data Any : (p : Command -> Type) -> (cmd : Command) -> Type where
+  Here : p cmd -> Any p cmd
   There :
-    (pos : Any p cs) ->
-    (parsedSub : ParsedCommand $ field pos) ->
-    ParsedCommand (MkCommand cmdName descr cs mods args)
+    (pos : c `IsField` cmd.subcommands) ->
+    (parsedSub : Any p (field pos)) ->
+    Any p cmd
 
 public export
-(.deref) : {c : Command} -> ParsedCommand c -> Command
-(Here _ _).deref = c
-(There _ parsedSub).deref = parsedSub.deref
+record ParsedCommand (cmd : Command) where
+  constructor MkParsedCommand
+  modifiers : ParsedModifiers cmd.modifiers
+  arguments : ParsedArguments cmd.arguments
+
+public export
+ParseTree : (cmd : Command) -> Type
+ParseTree = Any ParsedCommand
+
+public export
+lookup : {c : Command} -> Any p c -> Command
+lookup (Here {}) = c
+lookup (There {parsedSub, _}) = lookup parsedSub
 
 {-
   Some agda syntax magic goes here, so that:
@@ -95,6 +105,10 @@ args.parse old = foldl (\u,s => do {acc <- u; acc.update s}) (pure old)
 public export
 initNothing : {flds : Fields a} -> Record (Maybe . f) flds
 initNothing = MkRecord $ tabulate (\_ => Nothing)
+
+public export
+initParsedCommand : {cmd : Command} -> ParsedCommand cmd
+initParsedCommand = MkParsedCommand initNothing Nothing
 
 -- TODO: Come back to here later
 {-

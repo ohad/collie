@@ -21,13 +21,22 @@ record Record {0 A : Type} (0 F : A -> Type) (0 Flds : Fields A) where
   constructor MkRecord
   content : All (F . Builtin.snd) Flds
 
-public export 0
+public export
+IsField : (fldName : String) -> (flds : Fields a) -> Type
+IsField fldName flds = Any (\ u => fldName === fst u) flds
+
+public export
+isField : (fldName : String) -> (flds : Fields a) ->
+  Dec (fldName `IsField` flds)
+isField fldName flds = any (\u => decEq fldName (fst u)) flds
+
+public export
 field : {flds : Fields a} -> (pos : Any p flds) -> a
 field pos = snd (lookup pos)
 
 public export
 (.project) : {flds : Fields a} -> (rec : Record f flds) -> (name : String) ->
-  {auto pos : IsYes $ any (\x => decEq name (fst x)) flds} -> f (field $ toWitness pos)
+  {auto pos : IsYes $ name `isField` flds} -> f (field $ toWitness pos)
 rec.project name = rec.content !! _
 
 public export

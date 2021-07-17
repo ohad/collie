@@ -54,6 +54,6 @@ updateModifier  name {mod = MkOption opt} new (Just old) with ((opt.project "arg
 
 public export
 (.update) : {mods : Fields Modifier} -> (ps : ParsedModifiers mods) ->
-  {name : String} -> (pos : Any ((name ===) . Builtin.fst) mods) ->
+  {name : String} -> (pos : name `IsField` mods) ->
   (p : ParsedModifier (field pos)) -> Error (ParsedModifiers mods)
 ps.update pos p = MkRecord <$> ps.content.update pos (updateModifier name p)

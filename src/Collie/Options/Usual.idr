@@ -9,7 +9,7 @@ none = MkArguments (Some Void) $ const $ throwE $ "Argument provided when none e
 
 public export
 lotsOf : Arguments -> Arguments
-lotsOf args@(MkArguments _ _) = MkArguments
+lotsOf args@(MkArguments {}) = MkArguments
   (ALot (List.rawMagma (Carrier args.domain)))
   (((:: []) <$>) . args.parser)
 
