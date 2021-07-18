@@ -229,7 +229,7 @@ namespace Aux
     (::) : {x : a} -> (fresh : x # xs) -> FreshSnoc sx ((x :: xs) {fresh}) ->
       FreshSnoc {neq} (sx :< x) xs
 
-castAux     [<]   xs = []
+castAux     [<]   xs = xs
 castAux (sx :< x) xs
   {fresh = x_fresh_xs :: fresh} = castAux sx (x :: xs)
 

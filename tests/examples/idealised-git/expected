@@ -1,2 +1,2 @@
-1/1: Building IdealisedGit (IdealisedGit.idr)
-ok
+idealised-git A distributed revision control system with an emphasis on speed,
+data integrity, and support for distributed, non-linear workflows

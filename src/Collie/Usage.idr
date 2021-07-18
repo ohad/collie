@@ -13,30 +13,35 @@ Printer = Nat -> List String
 export
 namedString : String -> String -> Nat -> String
 namedString name str width
-  = let pad = 1 + width `minus` length name
+  = let pad = 2 + width `minus` length name
     in name ++ indent pad str
 
 Show Modifier where
   show (MkFlag   flg) = flg.project "description"
   show (MkOption opt) = opt.project "description"
 
+maxNameWidth : Fields a -> Nat
+maxNameWidth xs = foldl (\ u,v => max u (length (fst v))) 0 xs
+
 export
 usageModifier : (name : String) -> Modifier -> Nat -> Printer
-usageModifier name mod i width = [indent i $ namedString name (show mod) width]
+usageModifier name mod width i = [indent i $ namedString name (show mod) width]
 
 export
-usageModifiers : Fields Modifier -> Printer
-usageModifiers xs
-  = let width : Nat = foldl (\ u,v => max u (length (fst v))) 0 xs
-    in foldr (\(name,mod),u,i => usageModifier name mod i width ++ u i) (const []) xs
+usageModifiers : Fields Modifier -> Nat -> Printer
+usageModifiers xs width
+  = foldr (\(name,mod),u,i => usageModifier name mod width i ++ u i) (const []) xs
 
 export
-usageCommand : Command -> Printer
-usageCommand cmd i =
-  indent i (namedString cmd.name (cmd.description) (length cmd.name)) ::
-    foldr (\ (_, u) => (usageCommand u (2 + i) ++)) [] cmd.subcommands ++
-    (usageModifiers cmd.modifiers (2 + i))
+usageCommand : Command -> Nat -> Printer
+usageCommand cmd width i =
+  let subWidth : Nat = max (maxNameWidth cmd.subcommands) (maxNameWidth cmd.modifiers) in
+  indent i (namedString cmd.name (cmd.description) (2 + width)) ::
+    foldr (\ (_, u) => (usageCommand u (subWidth) (2 + i) ++)) [] cmd.subcommands ++
+    case (usageModifiers cmd.modifiers subWidth i) of
+      [] => []
+      xs => [""] ++ xs
 
 export
 (.usage) : Command -> String
-cmd.usage = unlines $ usageCommand cmd 0
+cmd.usage = unlines $ usageCommand cmd (length cmd.name) 0
