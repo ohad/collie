@@ -36,9 +36,9 @@ record Command where
 
 
 public export
-basic : {arg : String} -> Arguments -> Command
-basic args = MkCommand
-  { name = arg
+basic : (arg : String) -> Arguments -> Command
+basic cmdName args = MkCommand
+  { name = cmdName
   , description = ""
   , subcommands = []
   , modifiers   = []

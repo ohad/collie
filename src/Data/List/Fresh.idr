@@ -213,3 +213,30 @@ namespace String
   s  #? t = case (@@(s == t)) of
     (False ** prf) => Yes prf
     (True  ** prf) => No $ \prf' => absurd $ trans (sym prf) prf'
+
+namespace Aux
+  public export
+  data FreshSnoc : {a : Type} -> {neq : Rel a} -> SnocList a -> FreshList a neq -> Type
+
+public export
+castAux : (sx : SnocList a) -> (xs : FreshList a neq) ->
+  {auto fresh : FreshSnoc {neq} sx xs} -> FreshList a neq
+
+namespace Aux
+  public export
+  data FreshSnoc : {a : Type} -> {neq : Rel a} -> SnocList a -> FreshList a neq -> Type where
+    Nil  : FreshSnoc [<] xs
+    (::) : {x : a} -> (fresh : x # xs) -> FreshSnoc sx ((x :: xs) {fresh}) ->
+      FreshSnoc {neq} (sx :< x) xs
+
+castAux     [<]   xs = []
+castAux (sx :< x) xs
+  {fresh = x_fresh_xs :: fresh} = castAux sx (x :: xs)
+
+public export
+Fresh : {a : Type} -> {neq : Rel a} -> SnocList a -> Type
+Fresh {neq} sx = FreshSnoc {neq} sx []
+
+public export
+cast : (sx : SnocList a) -> {auto fresh : Fresh {neq} sx} -> FreshList a neq
+cast sx = castAux sx []

@@ -1,0 +1,4 @@
+$1 --build idealised-git.ipkg
+build/exec/idealised-git < input
+
+rm -rf build

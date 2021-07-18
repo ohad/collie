@@ -6,13 +6,20 @@ import public Collie.Options.Domain
 import Decidable.Decidable.Extra
 import Data.DPair
 
+infix 4 ::=
+public export
+(::=) : String -> a -> (String, a)
+(::=) = MkPair
+
 public export
 Flag : Fields Type
-Flag = [("description", String), ("default", Bool)]
+Flag = [ "description" ::= String
+       , "default"     ::=  Bool]
 
 public export
 Option : Fields Type
-Option = [("description", String), ("arguments", Arguments)]
+Option = ["description"::= String
+         , "arguments" ::= Arguments]
 
 public export
 data Modifier

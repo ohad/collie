@@ -20,3 +20,19 @@ import public Data.Record.Ordered.Properties
 import public Data.Vect
 import public Data.DPair
 import public Data.Magma
+
+import public Data.SnocList
+
+public export
+castGen : (name : a -> String) -> (sx : SnocList a) ->
+  {auto fresh : Fresh {neq = (#) `on` Builtin.fst}
+                  (map (\u => (name u, u)) sx) } ->
+  Fields a
+castGen name sx = cast (map (\u => (name u, u)) sx)
+
+public export
+MkCommands : (sx : SnocList Command) ->
+  {auto fresh : Fresh {neq = (#) `on` Builtin.fst}
+                  (map (\u => (name u, u)) sx) } ->
+  Fields Command
+MkCommands = castGen name
