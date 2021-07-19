@@ -23,7 +23,7 @@ namespace All
       All p ((x :: xs) {fresh})
 
 public export
-lookupWithProof : {xs : FreshList a neq} -> (pos : Any p xs) -> (x : a **  p x)
+lookupWithProof : {xs : FreshList a neq} -> (pos : Any p xs) -> (x : a ** p x)
 lookupWithProof (Here  val) = (_ ** val)
 lookupWithProof (There pos) = lookupWithProof pos
 

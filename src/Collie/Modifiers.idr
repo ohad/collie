@@ -8,59 +8,69 @@ import Data.DPair
 
 infix 4 ::=
 public export
-(::=) : String -> a -> (String, a)
-(::=) = MkPair
+(::=) : {0 a : String -> Type} -> (nm : String) -> a nm -> (nm : String ** a nm)
+(::=) = MkDPair
 
 public export
-Flag : Fields Type
+Flag : Fields (const Type)
 Flag = [ "description" ::= String
        , "default"     ::=  Bool]
 
 public export
-Option : Fields Type
-Option = ["description"::= String
-         , "arguments" ::= Arguments]
+Option : Fields (const Type)
+Option = [ "description" ::= String
+         , "arguments"   ::= Arguments]
 
 public export
-data Modifier
-  = MkFlag   (Record Prelude.id Flag  )
-  | MkOption (Record Prelude.id Option)
+data Modifier : (nm : String) -> Type where
+  MkFlag   : Record DPair.snd Flag   -> Modifier nm
+  MkOption : Record DPair.snd Option -> Modifier nm
 
 public export
-flag : String -> {default False defaultVal : Bool} -> Modifier
+flag : {0 nm : String} ->
+       (description : String) ->
+       {default False defaultVal : Bool} ->
+       Modifier nm
 flag desc = MkFlag $ MkRecord [desc, defaultVal]
 
 public export
-option : String -> Arguments -> Modifier
+option : {0 nm : String} ->
+         (description : String) ->
+         (arguments : Arguments) ->
+         Modifier nm
 option desc ducer = MkOption $ MkRecord [desc, ducer]
 
 public export
-ParsedModifier : Modifier -> Type
+ParsedModifier : Modifier nm -> Type
 ParsedModifier (MkFlag   flg) = Bool
 ParsedModifier (MkOption opt) = Carrier (opt.project "arguments").domain
 
 public export
 ParsedModifiers : (mods : Fields Modifier) -> Type
-ParsedModifiers mods = Record (Maybe . ParsedModifier) mods
+ParsedModifiers mods = Record (\ fld => Maybe $ ParsedModifier (snd fld)) mods
 
 public export
-updateModifier : (name : String) -> {mod : Modifier} ->
+updateModifier :
+  {name : String} ->
+  {mod : Modifier name} ->
   (new : ParsedModifier mod) ->
-  (old : Maybe (ParsedModifier mod)) -> Error (Maybe $ ParsedModifier mod)
-updateModifier  name                      new Nothing    = pure $ Just new
+  (old : Maybe (ParsedModifier mod)) ->
+  Error (Maybe $ ParsedModifier mod)
+updateModifier                        new Nothing    = pure $ Just new
 {- TODO: currently, overwrite previous flag, but we can do something
 better here: customise the behaviour, or parameterise by a partial
 monoid -}
-updateModifier  name {mod = MkFlag   flg} new (Just old) = pure $ Just new
-updateModifier  name {mod = MkOption opt} new (Just old) with ((opt.project "arguments").domain)
- updateModifier name {mod = MkOption opt} new (Just old) | Some d
-   = throwE $ "MkOption \{name} set twice"
- updateModifier name {mod = MkOption opt} new (Just old) | ALot ds
-   = let _ = openMagma ds in
-     pure $ Just $ old <+> new
+updateModifier   {mod = MkFlag   flg} new (Just old) = pure $ Just new
+updateModifier   {mod = MkOption opt} new (Just old)
+  with ((opt.project "arguments").domain)
+  updateModifier {mod = MkOption opt} new (Just old) | Some d
+    = throwE $ "MkOption \{name} set twice"
+  updateModifier {mod = MkOption opt} new (Just old) | ALot ds
+    = let _ = openMagma ds in
+      pure $ Just $ old <+> new
 
 public export
 (.update) : {mods : Fields Modifier} -> (ps : ParsedModifiers mods) ->
-  {name : String} -> (pos : name `IsField` mods) ->
-  (p : ParsedModifier (field pos)) -> Error (ParsedModifiers mods)
-ps.update pos p = MkRecord <$> ps.content.update pos (updateModifier name p)
+  (pos : Any p mods) ->
+  (p : ParsedModifier (snd (field pos))) -> Error (ParsedModifiers mods)
+ps.update pos p = MkRecord <$> ps.content.update pos (updateModifier p)

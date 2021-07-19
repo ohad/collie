@@ -9,15 +9,15 @@ import Data.Record.Ordered
 import Collie.Core
 
 public export
-parseCommand : (cmd : Command) -> List String ->  ParsedCommand cmd ->
-  Error (ParsedCommand cmd)
+parseCommand : (cmd : Command nm) -> List String ->
+  ParsedCommand nm cmd -> Error (ParsedCommand nm cmd)
 
 public export
-parseModifier : (cmd : Command) -> {modName : String} ->
+parseModifier : (cmd : Command nm) -> {modName : String} ->
   (pos : modName `IsField` cmd.modifiers) -> (rest : List String) ->
-  ParsedCommand cmd ->
-  (factory : ParsedModifier (field pos) -> Error (ParsedModifiers cmd.modifiers)) ->
-  Error (ParsedCommand cmd)
+  ParsedCommand nm cmd ->
+  (factory : ParsedModifier (snd $ field pos) -> Error (ParsedModifiers cmd.modifiers)) ->
+  Error (ParsedCommand nm cmd)
 
 parseCommand cmd [] old = pure old
 parseCommand cmd ("--" :: xs) old = do
@@ -30,7 +30,7 @@ parseCommand cmd (x :: xs) old
                     parseCommand cmd xs $ record { arguments = u} old
       Yes pos => parseModifier cmd pos xs old (old.modifiers.update pos)
 
-parseModifier  cmd pos rest old factory with (field pos)
+parseModifier  cmd pos rest old factory with (snd $ field pos)
  parseModifier cmd pos rest old factory | MkFlag   flg = do
     mods <- factory True
     parseCommand cmd rest $ record { modifiers = mods } old
@@ -42,9 +42,9 @@ parseModifier  cmd pos rest old factory with (field pos)
                      parseCommand cmd xs $ record {modifiers = mods} old
 
 public export
-parse : (cmd : Command) -> List String -> Error $ ParseTree cmd
+parse : (cmd : Command nm) -> List String -> Error $ ParseTree cmd
 parse cmd [] = pure (Here initParsedCommand)
 parse cmd xs@("--" :: _) = Here <$> parseCommand cmd xs initParsedCommand
 parse cmd ys@(x :: xs) = case x `isField` cmd.subcommands of
-                           Yes pos => There pos <$> parse (field pos) xs
+                           Yes pos => There pos <$> parse (snd $ field pos) xs
                            No  _   => Here <$> parseCommand cmd ys initParsedCommand

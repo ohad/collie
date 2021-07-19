@@ -24,48 +24,46 @@ ParsedArguments : Arguments -> Type
 ParsedArguments ducer = Maybe $ Carrier ducer.domain
 
 public export
-record Command where
+record Command (name : String) where
   constructor MkCommand
-  name        : String
   description : String
   subcommands : Fields Command
   modifiers : Fields Modifier
   arguments : Arguments
 
-
-
-
 public export
-basic : (arg : String) -> Arguments -> Command
-basic cmdName args = MkCommand
-  { name = cmdName
-  , description = ""
+basic : {cmdName : String} ->
+        (description : String) -> Arguments -> Command cmdName
+basic desc args = MkCommand
+  { description = desc
   , subcommands = []
   , modifiers   = []
   , arguments   = args
   }
 
 public export
-data Any : (p : Command -> Type) -> (cmd : Command) -> Type where
-  Here : p cmd -> Any p cmd
+data Any : (p : (0 nm : String) -> Command nm -> Type) ->
+           {0 nm : String} -> (cmd : Command nm) -> Type where
+  Here : {0 p : (0 nm : String) -> Command nm -> Type} ->
+         p nm cmd -> Any p cmd
   There :
     (pos : c `IsField` cmd.subcommands) ->
-    (parsedSub : Any p (field pos)) ->
+    (parsedSub : Any p (snd $ field pos)) ->
     Any p cmd
 
 public export
-record ParsedCommand (cmd : Command) where
+record ParsedCommand (0 nm : String) (cmd : Command nm) where
   constructor MkParsedCommand
   modifiers : ParsedModifiers cmd.modifiers
   arguments : ParsedArguments cmd.arguments
 
 public export
-ParseTree : (cmd : Command) -> Type
+ParseTree : (cmd : Command nm) -> Type
 ParseTree = Any ParsedCommand
 
 public export
-lookup : {c : Command} -> Any p c -> Command
-lookup (Here {}) = c
+lookup : {nm : String} -> {c : Command nm} -> Any p c -> (nm ** Command nm)
+lookup (Here {}) = (_ ** c)
 lookup (There {parsedSub, _}) = lookup parsedSub
 
 {-
@@ -107,7 +105,7 @@ initNothing : {flds : Fields a} -> Record (Maybe . f) flds
 initNothing = MkRecord $ tabulate (\_ => Nothing)
 
 public export
-initParsedCommand : {cmd : Command} -> ParsedCommand cmd
+initParsedCommand : {cmd : Command nm} -> ParsedCommand nm cmd
 initParsedCommand = MkParsedCommand initNothing Nothing
 
 -- TODO: Come back to here later

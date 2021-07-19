@@ -5,22 +5,29 @@ module Data.Record.Ordered.SmartConstructors
 
 import Data.Record.Ordered
 
-
 public export
 Nil : Record f []
 Nil = MkRecord []
 
+infix 1 ::=
+record Entry (a : String -> Type) (f : Field a -> Type) where
+  constructor (::=)
+  name  : String
+  {type : (str : String) -> a str}
+  value : f (name ** type name)
+
 public export
-(::) : {x : a} -> {flds : Fields a} ->
-  (namearg : (String, f x)) ->
-   (rec : Record f flds) ->
-  {auto fresh : IsYes (decideFreshness (fst namearg, x) (\y => (fst namearg #? (fst y))) flds)} ->
-  Record f (((fst namearg, x) :: flds) {fresh = toWitness fresh})
-(name, arg) :: rec = MkRecord ((arg :: rec.content) {fresh = toWitness fresh})
+(::) : {flds : Fields a} ->
+       (entry : Entry a f) ->
+       (rec : Record f flds) ->
+  {auto fresh : IsYes (decideFreshness (entry.name ** entry.type entry.name)
+                      (\y => (entry.name #? (fst y))) flds)} ->
+  Record f (((entry.name ** entry.type entry.name) :: flds)
+           {fresh = toWitness fresh})
+((name ::= value) :: rec)
+  = MkRecord ((value :: rec.content) {fresh = toWitness fresh})
 
 {-
-infixr 5 ::=
-
 public export
 (~>) : (Record args flds) -> (0 arg : String) -> {auto pos : arg `Elem` args} ->
   (Record args flds, arg `Elem` args)

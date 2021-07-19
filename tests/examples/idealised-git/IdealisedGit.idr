@@ -2,26 +2,23 @@ module IdealisedGit
 
 import Collie
 
-git : Command
+git : Command "idealised-git"
 git = MkCommand
-  { name = "idealised-git"
-  , description = """
+  { description = """
                   A distributed revision control system with an emphasis on speed, \
                   data integrity, and support for distributed, non-linear workflows
                   """
-  , subcommands = MkCommands [<
-                    basic "--help" none
-                  , record { description = "Add file contents to the index"}
-                      (basic "add" $ lotsOf filePath)
-                  , record { description = "Clone a repository into a new directory" }
-                      (basic "clone" url)
-                  , gitPush
-                  ]
+  , subcommands =
+     [ "--help" ::= basic "Print this help text." none
+     , "add"    ::= basic "Add file contents to the index" (lotsOf filePath)
+     , "clone"  ::= basic "Clone a repository into a new directory" url
+     , "push"   ::= gitPush
+     ]
   , modifiers = []
   , arguments = lotsOf filePath
   }
   where
-    gitPush : Command
+    gitPush : Command "push"
     gitPush = MkCommand
       { name = "push"
       , description = "Update remote refs along with associated objects"
@@ -38,17 +35,16 @@ git = MkCommand
       }
 
 
-{cmd : Command} -> Show (ParseTree cmd) where
-  show (Here x) = "\{cmd.name} <<args>>"
-  show (There pos parsedSub) = "\{cmd.name} \{show parsedSub}"
+{nm : String} -> {cmd : Command nm} -> Show (ParseTree cmd) where
+  show (Here x) = "\{nm} <<args>>"
+  show (There pos parsedSub) = "\{nm} \{show parsedSub}"
 
 
 main : IO Builtin.Unit
 main = do
   Right cmdParse <- git.withArgs
   | Left err => putStrLn "Error: \{err}"
-  case (lookup cmdParse).name of
+  case fst (lookup cmdParse) of
     "--help" => putStrLn "Usage:\n\{git.usage}"
     _ => putStrLn "Parsed as: \{show cmdParse}"
   putStrLn ""
-  pure ()
