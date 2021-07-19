@@ -38,7 +38,7 @@ git = MkCommand
       }
 
 
-{cmd : Command} -> Show (ParseTree cmd) where
+{cmd : Command} -> Show (ParseTree f g cmd) where
   show (Here x) = "\{cmd.name} <<args>>"
   show (There pos parsedSub) = "\{cmd.name} \{show parsedSub}"
 
