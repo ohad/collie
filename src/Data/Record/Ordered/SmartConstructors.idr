@@ -14,7 +14,7 @@ public export
 (::) : {x : a} -> {flds : Fields a} ->
   (namearg : (String, f x)) ->
    (rec : Record f flds) ->
-  {auto fresh : IsYes (decideFreshness (fst namearg, x) (\y => (fst namearg #? (fst y))) flds)} ->
+  {auto 0 fresh : IsYes (decideFreshness (fst namearg, x) (\y => (fst namearg #? (fst y))) flds)} ->
   Record f (((fst namearg, x) :: flds) {fresh = toWitness fresh})
 (name, arg) :: rec = MkRecord ((arg :: rec.content) {fresh = toWitness fresh})
 

@@ -20,8 +20,16 @@ public export
 public export
 data FreshList : (a : Type) -> (neq : Rel a) -> Type where
   Nil  : FreshList a neq
-  (::) : (x : a) -> (xs : FreshList a neq) -> {auto fresh : (#) {neq} x xs} ->
+  (::) : (x : a) -> (xs : FreshList a neq) -> {auto 0 fresh : (#) {neq} x xs} ->
          FreshList a neq
+
+namespace FreshList1
+
+  public export
+  data FreshList1 : (a : Type) -> (neq : Rel a) -> Type where
+    (::) : (x : a) -> (xs : FreshList a neq) ->
+           {auto 0 fresh : (#) {neq} x xs} ->
+           FreshList1 a neq
 
 %name FreshList xs, ys, zs
 
@@ -74,9 +82,9 @@ uncons    []     = Nothing
 uncons (x :: xs) = Just (x, xs)
 
 public export
-unconsWithFreshness : FreshList a neq -> Maybe (x : a ** xs : FreshList a neq ** x # xs)
-unconsWithFreshness     []              = Nothing
-unconsWithFreshness ((x :: xs) {fresh}) = Just (x ** xs ** fresh)
+toFreshList1 : FreshList a neq -> Maybe (FreshList1 a neq)
+toFreshList1    []     = Nothing
+toFreshList1 (x :: xs) = Just (x :: xs)
 
 public export
 head : (xs : FreshList a neq) -> (isNonEmpty : NonEmpty xs) => a
@@ -87,7 +95,7 @@ tail : (xs : FreshList a neq) -> (isNonEmpty : NonEmpty xs) => FreshList a neq
 tail (x :: xs) {isNonEmpty = IsNonEmpty} = xs
 
 public export
-(.freshness) : (xs : FreshList a neq) -> (isNonEmpty : NonEmpty xs) => head xs # tail xs
+0 (.freshness) : (xs : FreshList a neq) -> (isNonEmpty : NonEmpty xs) => head xs # tail xs
 (((x :: xs) {fresh}).freshness) {isNonEmpty = IsNonEmpty} = fresh
 
 -- Freshness lemmata
@@ -216,27 +224,25 @@ namespace String
 
 namespace Aux
   public export
-  data FreshSnoc : {a : Type} -> {neq : Rel a} -> SnocList a -> FreshList a neq -> Type
+  FreshSnoc : {a : Type} -> {neq : Rel a} -> SnocList a -> FreshList a neq -> Type
 
 public export
 castAux : (sx : SnocList a) -> (xs : FreshList a neq) ->
-  {auto fresh : FreshSnoc {neq} sx xs} -> FreshList a neq
+  {auto 0 fresh : FreshSnoc {neq} sx xs} -> FreshList a neq
 
 namespace Aux
-  public export
-  data FreshSnoc : {a : Type} -> {neq : Rel a} -> SnocList a -> FreshList a neq -> Type where
-    Nil  : FreshSnoc [<] xs
-    (::) : {x : a} -> (fresh : x # xs) -> FreshSnoc sx ((x :: xs) {fresh}) ->
-      FreshSnoc {neq} (sx :< x) xs
+
+  FreshSnoc [<] xs = ()
+  FreshSnoc (sx :< x) xs = (fresh : x # xs ** FreshSnoc sx ((x :: xs) {fresh}))
 
 castAux     [<]   xs = xs
-castAux (sx :< x) xs
-  {fresh = x_fresh_xs :: fresh} = castAux sx (x :: xs)
+castAux (sx :< x) xs {fresh}
+  = castAux sx ((x :: xs) {fresh = fresh.fst}) {fresh = fresh.snd}
 
 public export
 Fresh : {a : Type} -> {neq : Rel a} -> SnocList a -> Type
 Fresh {neq} sx = FreshSnoc {neq} sx []
 
 public export
-cast : (sx : SnocList a) -> {auto fresh : Fresh {neq} sx} -> FreshList a neq
+cast : (sx : SnocList a) -> {auto 0 fresh : Fresh {neq} sx} -> FreshList a neq
 cast sx = castAux sx []

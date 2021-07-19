@@ -27,14 +27,14 @@ import public System
 
 public export
 castGen : (name : a -> String) -> (sx : SnocList a) ->
-  {auto fresh : Fresh {neq = (#) `on` Builtin.fst}
+  {auto 0 fresh : Fresh {neq = (#) `on` Builtin.fst}
                   (map (\u => (name u, u)) sx) } ->
   Fields a
 castGen name sx = cast (map (\u => (name u, u)) sx)
 
 public export
 MkCommands : (sx : SnocList Command) ->
-  {auto fresh : Fresh {neq = (#) `on` Builtin.fst}
+  {auto 0 fresh : Fresh {neq = (#) `on` Builtin.fst}
                   (map (\u => (u.name, u)) sx) } ->
   Fields Command
 MkCommands = castGen name
