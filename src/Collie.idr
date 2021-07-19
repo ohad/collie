@@ -40,7 +40,8 @@ MkCommands : (sx : SnocList Command) ->
 MkCommands = castGen name
 
 public export
-(.withArgs) : (cmd : Command) -> HasIO io => io (String `Either` ParseTree cmd)
+(.withArgs) : (cmd : Command) -> HasIO io =>
+  io (String `Either` ParseTree Prelude.id Maybe cmd)
 cmd.withArgs = do
   args <- getArgs
   let args' =
@@ -48,4 +49,4 @@ cmd.withArgs = do
           [] => []
           _ :: xs => xs
   -- putStrLn "parsing arguments: \{show $ cmd.name :: args'}"
-  pure (runIdentity $ runEitherT $ parse cmd args')
+  pure $ map defaulting $ runIdentity $ runEitherT $ parse cmd args'

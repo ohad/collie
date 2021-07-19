@@ -20,8 +20,8 @@ ParsedArgument : Arguments -> Type
 ParsedArgument ducer = Carrier ducer.domain
 
 public export
-ParsedArguments : Arguments -> Type
-ParsedArguments ducer = Maybe $ Carrier ducer.domain
+ParsedArguments : (f : Type -> Type) -> Arguments -> Type
+ParsedArguments f ducer = f $ Carrier ducer.domain
 
 public export
 record Command where
@@ -31,9 +31,6 @@ record Command where
   subcommands : Fields Command
   modifiers : Fields Modifier
   arguments : Arguments
-
-
-
 
 public export
 basic : (arg : String) -> Arguments -> Command
@@ -53,15 +50,38 @@ data Any : (p : Command -> Type) -> (cmd : Command) -> Type where
     (parsedSub : Any p (field pos)) ->
     Any p cmd
 
-public export
-record ParsedCommand (cmd : Command) where
-  constructor MkParsedCommand
-  modifiers : ParsedModifiers cmd.modifiers
-  arguments : ParsedArguments cmd.arguments
+namespace Any
+
+  public export
+  map : {cmd : Command} -> ((cmd : Command) -> p cmd -> q cmd) ->
+    Any p cmd -> Any q cmd
+  map f (Here pcmd) = Here (f _ pcmd)
+  map f (There pos p) = There pos (map f p)
 
 public export
-ParseTree : (cmd : Command) -> Type
-ParseTree = Any ParsedCommand
+record ParsedCommand (f, g : Type -> Type) (cmd : Command) where
+  constructor MkParsedCommand
+  modifiers : ParsedModifiers f g cmd.modifiers
+  arguments : ParsedArguments g cmd.arguments
+
+namespace ParsedCommand
+
+  public export
+  defaulting : {cmd : Command} ->
+    ParsedCommand Maybe f cmd -> ParsedCommand Prelude.id f cmd
+  defaulting (MkParsedCommand mods args)
+    = MkParsedCommand (defaulting mods) args
+
+public export
+ParseTree : (f, g : Type -> Type) -> (cmd : Command) -> Type
+ParseTree f g = Any (ParsedCommand f g)
+
+namespace ParsedTree
+
+  public export
+  defaulting : {cmd : Command} ->
+    ParseTree Maybe f cmd -> ParseTree Prelude.id f cmd
+  defaulting = map (\ _ => defaulting)
 
 public export
 lookup : {c : Command} -> Any p c -> Command
@@ -72,7 +92,7 @@ lookup (There {parsedSub, _}) = lookup parsedSub
   Some agda syntax magic goes here, so that:
 
     [ descr ::= mods & args ]
-  desugras into
+  desugars into
     TheCommand {descr} mods args
   and
     descr [ pos ] sub
@@ -84,8 +104,8 @@ lookup (There {parsedSub, _}) = lookup parsedSub
 -}
 
 public export
-(.update) : {arg : Arguments} -> (ps : ParsedArguments arg) ->
-  String -> Error $ ParsedArguments arg
+(.update) : {arg : Arguments} -> (ps : ParsedArguments Maybe arg) ->
+  String -> Error $ ParsedArguments Maybe arg
 (.update) {arg = MkArguments (Some d ) parser} (Just _) _
   = throwE "Too many arguments: only one expected"
 (.update) {arg = MkArguments (Some d ) parser} Nothing x = Just <$> parser x
@@ -97,58 +117,11 @@ public export
 
 public export
 (.parse) : (args : Arguments) ->
-  (old : ParsedArguments args) ->
+  (old : ParsedArguments Maybe args) ->
   List String ->
-  Error $ ParsedArguments args
+  Error $ ParsedArguments Maybe args
 args.parse old = foldl (\u,s => do {acc <- u; acc.update s}) (pure old)
 
 public export
-initNothing : {flds : Fields a} -> Record (Maybe . f) flds
-initNothing = MkRecord $ tabulate (\_ => Nothing)
-
-public export
-initParsedCommand : {cmd : Command} -> ParsedCommand cmd
+initParsedCommand : {cmd : Command} -> ParsedCommand Maybe Maybe cmd
 initParsedCommand = MkParsedCommand initNothing Nothing
-
--- TODO: Come back to here later
-{-
-public export
-parseModifier : {c : Command} -> (pos : Any p c.modifiers) ->
-  (recyxs : ParsedCommand c) -> Error $ ParsedCommand c
-parseModifier pos (There pos' parsedSub)
-  = throwE $ "Found a {TODO: print modifier in (field pos')} for command \{c.name} " ++
-             "with subcommand \{parsedSub.deref.name}"
-parseModifier pos (Here parsedMods parsedArgs) =
-  (\m => Here m parsedArgs) <$> (parsedMods.update
--}
-
-
-{-
-public export
-parseModifier : {arg : String} -> (c : Command arg) -> {x : String} ->
-  (recyxs, recxs : Error (ParsedCommand c)) ->
-  (pos : x `Elem` c.modifiers.fst) -> Error $ ParsedCommand c
-parseModifier (MkCommand description (Evidence names cs.commands) (args ** mods) arguments)
-  {x} recyxs recxs pos = do
-  TheCommand mods' args <- recyxs
-  | SubCommand _ _ => throwE $ "Found a MkFlag for command \{arg} " ++
-                               "with subcommand \{description}"
-  p <- case @@(the (Modifier _) $ mods.project' x {pos}) of
-        (MkFlag   flg ** prf) => pure $ replace {p = ParsedModifier} (sym prf) $
-                                        True
-        (MkOption opt ** prf) => do
-          u <- (opt.project "arguments").snd x
-          pure $ replace {p = ParsedModifier} (sym prf)
-               $ Just u
-  (\m => TheCommand m args) <$> (mods'.update x p)
-
-public export
-parseArgument : {arg : String} -> (c : Command arg) -> Error (ParsedCommand c) ->
-  String -> Error $ ParsedCommand c
-parseArgument (MkCommand description (Evidence names cs.commands) (args ** mods) (d ** p))
-  recyxs x = do
-  TheCommand mods' args' <- recyxs
-  | SubCommand _ _ => throwE $ "Found an argument for command \{arg} " ++
-                               "with subcommand \{description}"
-  TheCommand mods' <$> updateArgument d p args' x
--}

@@ -21,6 +21,13 @@ record Record {0 A : Type} (0 F : A -> Type) (0 Flds : Fields A) where
   constructor MkRecord
   content : All (F . Builtin.snd) Flds
 
+namespace Record
+
+  public export
+  map : {flds : Fields a} -> (String -> (x : a) -> f x -> g x) ->
+    Record f flds -> Record g flds
+  map f (MkRecord rec) = MkRecord (All.map (\ (str, x) => f str x) rec)
+
 public export
 IsField : (fldName : String) -> (flds : Fields a) -> Type
 IsField fldName flds = Any (\ u => fldName === fst u) flds
@@ -54,9 +61,11 @@ tabulateFreshness    []     f x = ()
 tabulateFreshness (x :: xs) f (y_fresh_x, y_fresh_xs)
   = (y_fresh_x, tabulateFreshness xs _ y_fresh_xs)
 
-public export
-map : (f : a -> b) -> Fields a -> Fields b
-map f = Data.List.Fresh.map (map f) (\(_,_), (_,_) => id)
+namespace Fields
+
+  public export
+  map : (f : a -> b) -> Fields a -> Fields b
+  map f = Data.List.Fresh.map (map f) (\(_,_), (_,_) => id)
 
 public export
 foldl : (f : b -> a -> b) -> b -> Record (const a) flds -> b
