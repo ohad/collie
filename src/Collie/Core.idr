@@ -24,42 +24,47 @@ ParsedArguments : (f : Type -> Type) -> Arguments -> Type
 ParsedArguments f ducer = f $ Carrier ducer.domain
 
 public export
-record Command where
+record Command (name : String) where
   constructor MkCommand
-  name        : String
   description : String
   subcommands : Fields Command
   modifiers : Fields Modifier
   arguments : Arguments
 
 public export
-basic : (arg : String) -> Arguments -> Command
-basic cmdName args = MkCommand
-  { name = cmdName
-  , description = ""
+basic : {cmdName : String} ->
+        (description : String) -> Arguments -> Command cmdName
+basic desc args = MkCommand
+  { description = desc
   , subcommands = []
   , modifiers   = []
   , arguments   = args
   }
 
 public export
-data Any : (p : Command -> Type) -> (cmd : Command) -> Type where
-  Here : p cmd -> Any p cmd
+data Any : (p : (0 nm : String) -> Command nm -> Type) ->
+           {0 nm : String} -> (cmd : Command nm) -> Type where
+  Here : {0 p : (0 nm : String) -> Command nm -> Type} ->
+         p nm cmd -> Any p cmd
   There :
     (pos : c `IsField` cmd.subcommands) ->
-    (parsedSub : Any p (field pos)) ->
+    (parsedSub : Any p (snd $ field pos)) ->
     Any p cmd
 
 namespace Any
 
   public export
-  map : {cmd : Command} -> ((cmd : Command) -> p cmd -> q cmd) ->
-    Any p cmd -> Any q cmd
+  map : {0 p, q : (0 nm : String) -> Command nm -> Type} ->
+        {cmd : Command nm} ->
+        ({0 nm : String} -> (cmd : Command nm) -> p nm cmd -> q nm cmd) ->
+        Any p cmd -> Any q cmd
   map f (Here pcmd) = Here (f _ pcmd)
   map f (There pos p) = There pos (map f p)
 
 public export
-record ParsedCommand (f, g : Type -> Type) (cmd : Command) where
+record ParsedCommand
+       (f, g : Type -> Type)
+       (0 nm : String) (cmd : Command nm) where
   constructor MkParsedCommand
   modifiers : ParsedModifiers f g cmd.modifiers
   arguments : ParsedArguments g cmd.arguments
@@ -67,25 +72,25 @@ record ParsedCommand (f, g : Type -> Type) (cmd : Command) where
 namespace ParsedCommand
 
   public export
-  defaulting : {cmd : Command} ->
-    ParsedCommand Maybe f cmd -> ParsedCommand Prelude.id f cmd
+  defaulting : {cmd : Command nm} ->
+    ParsedCommand Maybe f nm cmd -> ParsedCommand Prelude.id f nm cmd
   defaulting (MkParsedCommand mods args)
     = MkParsedCommand (defaulting mods) args
 
 public export
-ParseTree : (f, g : Type -> Type) -> (cmd : Command) -> Type
+ParseTree : (f, g : Type -> Type) -> (cmd : Command nm) -> Type
 ParseTree f g = Any (ParsedCommand f g)
 
 namespace ParsedTree
 
   public export
-  defaulting : {cmd : Command} ->
+  defaulting : {cmd : Command nm} ->
     ParseTree Maybe f cmd -> ParseTree Prelude.id f cmd
   defaulting = map (\ _ => defaulting)
 
 public export
-lookup : {c : Command} -> Any p c -> Command
-lookup (Here {}) = c
+lookup : {nm : String} -> {c : Command nm} -> Any p c -> (nm ** Command nm)
+lookup (Here {}) = (_ ** c)
 lookup (There {parsedSub, _}) = lookup parsedSub
 
 {-
@@ -123,5 +128,5 @@ public export
 args.parse old = foldl (\u,s => do {acc <- u; acc.update s}) (pure old)
 
 public export
-initParsedCommand : {cmd : Command} -> ParsedCommand Maybe Maybe cmd
+initParsedCommand : {cmd : Command nm} -> ParsedCommand Maybe Maybe nm cmd
 initParsedCommand = MkParsedCommand initNothing Nothing

@@ -26,21 +26,7 @@ import public Data.SnocList
 import public System
 
 public export
-castGen : (name : a -> String) -> (sx : SnocList a) ->
-  {auto 0 fresh : Fresh {neq = (#) `on` Builtin.fst}
-                  (map (\u => (name u, u)) sx) } ->
-  Fields a
-castGen name sx = cast (map (\u => (name u, u)) sx)
-
-public export
-MkCommands : (sx : SnocList Command) ->
-  {auto 0 fresh : Fresh {neq = (#) `on` Builtin.fst}
-                  (map (\u => (u.name, u)) sx) } ->
-  Fields Command
-MkCommands = castGen name
-
-public export
-(.withArgs) : (cmd : Command) -> HasIO io =>
+(.withArgs) : (cmd : Command nm) -> HasIO io =>
   io (String `Either` ParseTree Prelude.id Maybe cmd)
 cmd.withArgs = do
   args <- getArgs

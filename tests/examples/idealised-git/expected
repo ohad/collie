@@ -1,7 +1,7 @@
 1/1: Building IdealisedGit (IdealisedGit.idr)
 Usage:
 idealised-git    A distributed revision control system with an emphasis on speed, data integrity, and support for distributed, non-linear workflows
-  --help    
+  --help    Print this help text.
   add       Add file contents to the index
   clone     Clone a repository into a new directory
   push      Update remote refs along with associated objects
