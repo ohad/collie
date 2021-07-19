@@ -76,11 +76,30 @@ public export
 (val :: vals).update (Here  _  ) action = (\x  => x   :: vals) <$> action val
 (val :: vals).update (There pos) action = (\xs => val :: xs  ) <$> vals.update pos action
 
-||| Map a function restricted to the support of the list
-public export
-mapSupport : ((pos : Any f xs) -> q (lookup pos)) -> (All f xs) -> All q xs
-mapSupport g [] = []
-mapSupport g (val :: vals) = g (Here val) ::  mapSupport (\u => g $ There u) vals
+namespace Any
+
+  ||| Map a function
+  public export
+  map : {xs : FreshList a neq} -> ((x : a) -> p x -> q x) ->
+    Any p xs -> Any q xs
+  map f (Here px) = Here (f _ px)
+  map f (There p) = There (map f p)
+
+namespace All
+
+  ||| Map a function
+  public export
+  map : {xs : FreshList a neq} -> ((x : a) -> p x -> q x) ->
+    All p xs -> All q xs
+  map f [] = []
+  map f (px :: pxs) = f _ px :: map f pxs
+
+  ||| Map a function restricted to the support of the list
+  public export
+  mapSupport : ((pos : Any f xs) -> q (lookup pos)) -> All f xs -> All q xs
+  mapSupport g [] = []
+  mapSupport g (val :: vals)
+    = g (Here val) ::  mapSupport (\u => g $ There u) vals
 
 public export
 tabulate : {xs : FreshList a neq} -> (f : (x : a) -> p x) -> All p xs

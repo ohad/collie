@@ -9,15 +9,15 @@ import Data.Record.Ordered
 import Collie.Core
 
 public export
-parseCommand : (cmd : Command) -> List String ->  ParsedCommand cmd ->
-  Error (ParsedCommand cmd)
+parseCommand : (cmd : Command) -> List String ->
+  ParsedCommand Maybe Maybe cmd -> Error (ParsedCommand Maybe Maybe cmd)
 
 public export
 parseModifier : (cmd : Command) -> {modName : String} ->
   (pos : modName `IsField` cmd.modifiers) -> (rest : List String) ->
-  ParsedCommand cmd ->
-  (factory : ParsedModifier (field pos) -> Error (ParsedModifiers cmd.modifiers)) ->
-  Error (ParsedCommand cmd)
+  ParsedCommand Maybe Maybe cmd ->
+  (factory : ParsedModifier Prelude.id Prelude.id (field pos) -> Error (ParsedModifiers Maybe Maybe cmd.modifiers)) ->
+  Error (ParsedCommand Maybe Maybe cmd)
 
 parseCommand cmd [] old = pure old
 parseCommand cmd ("--" :: xs) old = do
@@ -42,7 +42,7 @@ parseModifier  cmd pos rest old factory with (field pos)
                      parseCommand cmd xs $ record {modifiers = mods} old
 
 public export
-parse : (cmd : Command) -> List String -> Error $ ParseTree cmd
+parse : (cmd : Command) -> List String -> Error $ ParseTree Maybe Maybe cmd
 parse cmd [] = pure (Here initParsedCommand)
 parse cmd xs@("--" :: _) = Here <$> parseCommand cmd xs initParsedCommand
 parse cmd ys@(x :: xs) = case x `isField` cmd.subcommands of
