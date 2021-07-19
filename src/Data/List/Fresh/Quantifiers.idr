@@ -6,9 +6,9 @@ import Data.DPair
 namespace Any
   public export
   data Any : (0 p : a -> Type) -> FreshList a neq -> Type where
-    Here : {0 xs : FreshList a neq} -> (val : p x) -> {auto fresh : x # xs} ->
+    Here : {0 xs : FreshList a neq} -> (val : p x) -> {auto 0 fresh : x # xs} ->
       Any p ((x :: xs) {fresh})
-    There : {0 xs : FreshList a neq} -> (pos : Any p xs) -> {auto fresh : x # xs} ->
+    There : {0 xs : FreshList a neq} -> (pos : Any p xs) -> {auto 0 fresh : x # xs} ->
       Any p ((x :: xs) {fresh})
 
 export
@@ -19,11 +19,12 @@ namespace All
   public export
   data All : (0 p : a -> Type) -> FreshList a neq -> Type where
     Nil : All p Nil
-    (::) : {0 xs : FreshList a neq} -> (val : p x) -> {auto fresh : x # xs} -> (vals : All p xs) ->
+    (::) : {0 xs : FreshList a neq} -> (val : p x) ->
+           {auto 0 fresh : x # xs} -> (vals : All p xs) ->
       All p ((x :: xs) {fresh})
 
 public export
-lookupWithProof : {xs : FreshList a neq} -> (pos : Any p xs) -> (x : a **  p x)
+lookupWithProof : {xs : FreshList a neq} -> (pos : Any p xs) -> (x : a ** p x)
 lookupWithProof (Here  val) = (_ ** val)
 lookupWithProof (There pos) = lookupWithProof pos
 
@@ -64,7 +65,7 @@ any decide (x :: xs) = case decide x of
   Yes prf   => Yes $ Here prf
   No not_x  => case any decide xs of
                  Yes prf    => Yes (There prf)
-                 No  not_xs => No \case
+                 No  not_xs => No $ \case
                    Here val  => not_x val
                    There pos => not_xs pos
 
