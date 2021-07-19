@@ -28,6 +28,13 @@ record Record {0 A : String -> Type}
   constructor MkRecord
   content : All F Flds
 
+namespace Record
+
+  public export
+  map : {flds : Fields a} -> ((x : Field a) -> f x -> g x) ->
+    Record f flds -> Record g flds
+  map f (MkRecord rec) = MkRecord (All.map f rec)
+
 public export
 IsField : (fldName : String) -> (flds : Fields a) -> Type
 IsField fldName flds = Any (\ u => fldName === fst u) flds

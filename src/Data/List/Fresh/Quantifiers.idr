@@ -6,9 +6,9 @@ import Data.DPair
 namespace Any
   public export
   data Any : (0 p : a -> Type) -> FreshList a neq -> Type where
-    Here : {0 xs : FreshList a neq} -> (val : p x) -> {auto fresh : x # xs} ->
+    Here : {0 xs : FreshList a neq} -> (val : p x) -> {auto 0 fresh : x # xs} ->
       Any p ((x :: xs) {fresh})
-    There : {0 xs : FreshList a neq} -> (pos : Any p xs) -> {auto fresh : x # xs} ->
+    There : {0 xs : FreshList a neq} -> (pos : Any p xs) -> {auto 0 fresh : x # xs} ->
       Any p ((x :: xs) {fresh})
 
 export
@@ -19,7 +19,8 @@ namespace All
   public export
   data All : (0 p : a -> Type) -> FreshList a neq -> Type where
     Nil : All p Nil
-    (::) : {0 xs : FreshList a neq} -> (val : p x) -> {auto fresh : x # xs} -> (vals : All p xs) ->
+    (::) : {0 xs : FreshList a neq} -> (val : p x) ->
+           {auto 0 fresh : x # xs} -> (vals : All p xs) ->
       All p ((x :: xs) {fresh})
 
 public export
@@ -64,7 +65,7 @@ any decide (x :: xs) = case decide x of
   Yes prf   => Yes $ Here prf
   No not_x  => case any decide xs of
                  Yes prf    => Yes (There prf)
-                 No  not_xs => No \case
+                 No  not_xs => No $ \case
                    Here val  => not_x val
                    There pos => not_xs pos
 
@@ -75,11 +76,30 @@ public export
 (val :: vals).update (Here  _  ) action = (\x  => x   :: vals) <$> action val
 (val :: vals).update (There pos) action = (\xs => val :: xs  ) <$> vals.update pos action
 
-||| Map a function restricted to the support of the list
-public export
-mapSupport : ((pos : Any f xs) -> q (lookup pos)) -> (All f xs) -> All q xs
-mapSupport g [] = []
-mapSupport g (val :: vals) = g (Here val) ::  mapSupport (\u => g $ There u) vals
+namespace Any
+
+  ||| Map a function
+  public export
+  map : {xs : FreshList a neq} -> ((x : a) -> p x -> q x) ->
+    Any p xs -> Any q xs
+  map f (Here px) = Here (f _ px)
+  map f (There p) = There (map f p)
+
+namespace All
+
+  ||| Map a function
+  public export
+  map : {xs : FreshList a neq} -> ((x : a) -> p x -> q x) ->
+    All p xs -> All q xs
+  map f [] = []
+  map f (px :: pxs) = f _ px :: map f pxs
+
+  ||| Map a function restricted to the support of the list
+  public export
+  mapSupport : ((pos : Any f xs) -> q (lookup pos)) -> All f xs -> All q xs
+  mapSupport g [] = []
+  mapSupport g (val :: vals)
+    = g (Here val) ::  mapSupport (\u => g $ There u) vals
 
 public export
 tabulate : {xs : FreshList a neq} -> (f : (x : a) -> p x) -> All p xs
