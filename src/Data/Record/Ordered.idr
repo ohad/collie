@@ -40,6 +40,34 @@ IsField : (fldName : String) -> (flds : Fields a) -> Type
 IsField fldName flds = Any (\ u => fldName === fst u) flds
 
 public export
+isYesBecause : (d : Dec p) -> p -> IsYes d
+isYesBecause (Yes prf) p = ItIsYes
+isYesBecause (No nprf) p = absurd (nprf p)
+
+public export
+stringEq : {x, y : String} -> x === y -> (x == y) === True
+stringEq eq = go (decEq x y `isYesBecause` eq) where
+
+  go : IsYes (decEq x y) -> (x == y) === True
+  go p with (x == y)
+   go p | True = Refl
+
+public export
+IsFieldStale : nm `IsField` flds -> fst nmv === nm -> Not (nmv # flds)
+IsFieldStale (Here Refl) eq (neq , _)  = absurd $ trans (sym $ stringEq eq) neq
+IsFieldStale (There pos) eq (_, fresh) = IsFieldStale pos eq fresh
+
+public export
+IsFieldIrrelevant : (p, q : nm `IsField` flds) -> p === q
+IsFieldIrrelevant (Here Refl) (Here Refl) = Refl
+IsFieldIrrelevant (Here Refl) (There {fresh} p)
+  = void $ IsFieldStale p Refl fresh
+IsFieldIrrelevant (There {fresh} p) (Here Refl)
+  = void $ IsFieldStale p Refl fresh
+IsFieldIrrelevant (There p) (There q)
+  = cong There (IsFieldIrrelevant p q)
+
+public export
 isField : (fldName : String) -> (flds : Fields a) ->
   Dec (fldName `IsField` flds)
 isField fldName flds = any (\u => decEq fldName (fst u)) flds

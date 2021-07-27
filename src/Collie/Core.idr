@@ -50,6 +50,7 @@ data Any : (p : (0 nm : String) -> Command nm -> Type) ->
   Here : {0 p : (0 nm : String) -> Command nm -> Type} ->
          p nm cmd -> Any p cmd
   There :
+    {c : String} ->
     (pos : c `IsField` cmd.subcommands) ->
     (parsedSub : Any p (snd $ field pos)) ->
     Any p cmd
@@ -85,14 +86,51 @@ ParseTree : (f, g : Type -> Type) -> (cmd : Command nm) -> Type
 ParseTree f g = Any (ParsedCommand f g)
 
 public export
-data IsPath : (pos : ParseTree f g cmd) ->
-  (path : List String) ->
-  ParsedCommand f g focus focusCmd -> Type where
-  Nil : IsPath (Here args) [] args
-  (::) : (sub : String) -> {auto subIsField : IsYes $ sub `isField` cmd.subcommands} ->
-    {0 pos : ParseTree f g $ snd $ field $ toWitness subIsField} ->
-    (subs : IsPath {focusCmd} pos path args) ->
-    IsPath {cmd, focusCmd} (There (toWitness subIsField) pos) (sub :: path) args
+data IsPathTo :
+     {cmd : Command cmdName} ->
+     {focus : Command focusName} ->
+     (any : Any p cmd) ->
+     (path : List String) ->
+     p focusName focus -> Type where
+  Nil : IsPathTo {cmd} {focus = cmd} (Here px) [] px
+  (::) :
+    {0 p : (0 str : String) -> Command str -> Type} ->
+    {0 px : p focusName focus} ->
+    (sub : String) -> {auto pos : IsYes $ sub `isField` cmd.subcommands} ->
+    {0 any : Any p (snd $ field $ toWitness pos)} ->
+    (subs : IsPathTo {p} {focus} any path px) ->
+    IsPathTo {cmd, focus} (There (toWitness pos) any) (sub :: path) px
+
+public export
+record Focus
+  {cmdName : String} (cmd : Command cmdName)
+  {p : (0 str : String) -> Command str -> Type}
+  (pos : Any p cmd) where
+  constructor MkFocus
+  {path : List String}
+  {focusName : String}
+  {focus : Command focusName}
+  value    : p focusName focus
+  isPathTo : IsPathTo pos path value
+
+public export
+cons : {0 p : (0 str : String) -> Command str -> Type} ->
+       {cmdName : String} -> {cmd : Command cmdName} ->
+       (nm : String) -> {pos : nm `IsField` cmd.subcommands} ->
+       {pos' : IsYes (nm `isField` cmd.subcommands)} ->
+       (eq : pos === toWitness pos') -> {any : Any p (snd (field pos))} ->
+       Focus (snd (field pos)) any ->
+       Focus cmd (There pos any)
+cons nm Refl (MkFocus px path) = MkFocus px (nm :: path)
+
+public export
+focus : {cmdName : String} -> {cmd : Command cmdName} ->
+        (any : Any p cmd) -> Focus cmd any
+focus (Here px) = MkFocus px []
+focus (There {c} pos any)
+  = let pos' : ?
+        pos' = (c `isField` cmd.subcommands) `isYesBecause` pos in
+    cons c (IsFieldIrrelevant pos (toWitness pos')) (focus any)
 
 namespace ParsedTree
 

@@ -6,10 +6,10 @@ import Data.DPair
 namespace Any
   public export
   data Any : (0 p : a -> Type) -> FreshList a neq -> Type where
-    Here : {0 xs : FreshList a neq} -> (val : p x) -> {auto 0 fresh : x # xs} ->
-      Any p ((x :: xs) {fresh})
-    There : {0 xs : FreshList a neq} -> (pos : Any p xs) -> {auto 0 fresh : x # xs} ->
-      Any p ((x :: xs) {fresh})
+    Here  : {0 xs : FreshList a neq} -> {auto 0 fresh : x # xs}->
+            (val : p x) -> Any p ((x :: xs) {fresh})
+    There : {0 xs : FreshList a neq} -> {auto 0 fresh : x # xs}->
+            (pos : Any p xs) -> Any p ((x :: xs) {fresh})
 
 export
 Uninhabited (Any {neq} p []) where
