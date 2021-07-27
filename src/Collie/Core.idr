@@ -13,6 +13,9 @@ import public Data.Magma
 
 import public Syntax.WithProof
 
+import public Decidable.Decidable
+import public Decidable.Decidable.Extra1
+
 %default total
 
 public export
@@ -80,6 +83,16 @@ namespace ParsedCommand
 public export
 ParseTree : (f, g : Type -> Type) -> (cmd : Command nm) -> Type
 ParseTree f g = Any (ParsedCommand f g)
+
+public export
+data IsPath : (pos : ParseTree f g cmd) ->
+  (path : List String) ->
+  ParsedCommand f g focus focusCmd -> Type where
+  Nil : IsPath (Here args) [] args
+  (::) : (sub : String) -> {auto subIsField : IsYes $ sub `isField` cmd.subcommands} ->
+    {0 pos : ParseTree f g $ snd $ field $ toWitness subIsField} ->
+    (subs : IsPath {focusCmd} pos path args) ->
+    IsPath {cmd, focusCmd} (There (toWitness subIsField) pos) (sub :: path) args
 
 namespace ParsedTree
 

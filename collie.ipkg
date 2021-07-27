@@ -28,6 +28,7 @@ modules
   , Data.Record.Ordered.Properties
   , Data.Record.Ordered.SmartConstructors
   , Data.Magma
+  , Decidable.Decidable.Extra1
 
 -- main file (i.e. file to load at REPL)
 -- main =

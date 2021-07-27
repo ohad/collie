@@ -1,4 +1,4 @@
-module Decidable.Decidable.Extra
+module Decidable.Decidable.Extra1
 
 import public Decidable.Decidable
 

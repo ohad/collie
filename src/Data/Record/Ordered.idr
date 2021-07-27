@@ -6,7 +6,7 @@ import public Data.List.Fresh
 import public Data.List.Fresh.Quantifiers
 import Data.Fin
 import Data.DPair
-import public Decidable.Decidable.Extra
+import public Decidable.Decidable.Extra1
 import public Decidable.Equality
 
 public export
