@@ -1,0 +1,7 @@
+package deeply-nested
+authors = "Collie team"
+
+depends = collie, contrib
+modules = DeeplyNested
+main = DeeplyNested
+executable = deeply-nested
