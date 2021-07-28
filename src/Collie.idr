@@ -26,9 +26,9 @@ import public Data.SnocList
 import public System
 
 public export
-(.withArgs) : (cmd : Command nm) -> HasIO io =>
+(.parseArgs) : (cmd : Command nm) -> HasIO io =>
   io (String `Either` ParseTree Prelude.id Maybe cmd)
-cmd.withArgs = do
+cmd.parseArgs = do
   args <- getArgs
   let args' =
         case args of
@@ -36,3 +36,25 @@ cmd.withArgs = do
           _ :: xs => xs
   -- putStrLn "parsing arguments: \{show $ cmd.name :: args'}"
   pure $ map defaulting $ runIdentity $ runEitherT $ parse cmd args'
+
+
+infixr 4 -=->
+
+public export
+0 (-=->) : (Command arg) -> Type -> Type
+(-=->) cmd a =
+  {0 covers : ParseTree Prelude.id Maybe cmd} ->
+  {path : List String} ->
+  {focus : _} -> {focusCmd : _} ->
+  {parsed : ParsedCommand Prelude.id Maybe focus focusCmd } ->
+  IsPathTo covers path parsed ->
+  a
+
+public export
+(.withArgs) : {nm : String} -> (cmd : Command nm) -> (cmd -=-> IO a) -> IO a
+cmd .withArgs k
+  = do Right args <- cmd.parseArgs
+         | _ => do putStrLn (cmd .usage)
+                   exitFailure
+       let (MkFocus sub path) = focus args
+       k path

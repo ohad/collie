@@ -1,8 +1,8 @@
+rm -rf build
+
 $1 --build idealised-git.ipkg
 build/exec/idealised-git --help
 build/exec/idealised-git push
 build/exec/idealised-git push --force
 build/exec/idealised-git add idealised-git.ipkg
 build/exec/idealised-git clone https://github.com/idris-lang/Idris2.git
-
-rm -rf build
