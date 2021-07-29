@@ -5,6 +5,8 @@ module Data.Record.Ordered.SmartConstructors
 
 import Data.Record.Ordered
 
+%default total
+
 public export
 Nil : Record f []
 Nil = MkRecord []

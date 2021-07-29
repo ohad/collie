@@ -25,6 +25,8 @@ import public Data.SnocList
 
 import public System
 
+%default total
+
 public export
 (.parseArgs) : (cmd : Command nm) -> HasIO io =>
   io (String `Either` ParseTree Prelude.id Maybe cmd)
@@ -58,3 +60,46 @@ cmd .withArgs k
                    exitFailure
        let (MkFocus sub path) = focus args
        k path
+
+public export
+record Handlers (a : Type) (cmd : Field Command) where
+  constructor MkHandlers
+  here  : ParsedCommand Prelude.id Maybe (cmd .fst) (cmd .snd) -> a
+  there : Record (Handlers a) cmd.snd.subcommands
+
+||| Givent that we already have list syntax to build records, this gives us the
+||| ability to use list syntax to build `Handlers`: the head will be the handler
+||| for the toplevel command and the tail will go towards building the record of
+||| handlers for the subcommands.
+public export
+(::) : (ParsedCommand Prelude.id Maybe (cmd .fst) (cmd .snd) -> a) ->
+       (Record (Handlers a) cmd.snd.subcommands) ->
+       Handlers a cmd
+(::) = MkHandlers
+
+infixr 4 ~~>
+
+||| A nicer notation for handlers
+public export
+0 (~~>) : (Command arg) -> Type -> Type
+(~~>) cmd a = Handlers a (_ ** cmd)
+
+||| Handling a parsetree is pretty simple: use `there` together with `(!!)` to
+||| select the appropriate subhandler while you're encountering  the `There`
+||| constructor and finish up with `here`.
+public export
+handle : {0 cmd : Field Command} ->
+         ParseTree Prelude.id Maybe cmd.snd -> Handlers a cmd -> a
+handle (Here res)    h = h.here res
+handle (There pos p) h = handle p $ content h.there !! pos
+
+||| Finally we can put the various pieces together to get a toplevel command
+||| parsing the arguments and handling the resulting command using the
+||| user-provided handlers
+public export
+(.handleWith) : {nm : String} -> (cmd : Command nm) -> (cmd ~~> IO a) -> IO a
+cmd .handleWith h
+  = do Right args <- cmd.parseArgs
+         | _ => do putStrLn (cmd .usage)
+                   exitFailure
+       handle args h

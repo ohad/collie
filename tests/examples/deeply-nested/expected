@@ -1,0 +1,8 @@
+1/1: Building DeeplyNested (DeeplyNested.idr)
+Received the files: ["left", "right", "expected", "output"]
+Took a left turn
+Took a right turn
+Half turn, leftwise
+Back to the start (lr)
+Back to the start (rl)
+Half turn, rightwise

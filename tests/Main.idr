@@ -12,6 +12,7 @@ datatypes = MkTestPool "Datatypes defined in Collie" [] Nothing
 tests : TestPool
 tests = MkTestPool "Examples using Collie" [] Nothing
   [ "idealised-git"
+  , "deeply-nested"
   ]
 
 main : IO ()

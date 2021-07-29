@@ -1,13 +1,16 @@
+||| An example using the handlers-based approach
+
 module DeeplyNested
 
 import Collie
+import Data.List.Quantifiers
 
 %default total
 
 Turns : Command "TOP"
 Turns = MkCommand
   { description = "A deeply nested example"
-  , subcommands = turns [] -- $ turns []
+  , subcommands = turns $ turns []
   , modifiers = []
   , arguments = lotsOf filePath
   } where
@@ -33,12 +36,19 @@ Turns = MkCommand
                , "right" ::= right cmds
                ]
 
-handle : Turns -=-> IO ()
-handle [] = ?a
-handle ["left"] = ?atnbzg
--- handle ["right"] = ?atnbza
--- handle ["left", "left"] = ?atnbegfha
--- handle ["left", "right"] = ?atnba
--- handle ["right", "right"] = ?atnbehth
--- handle ["right", "left"] = ?atnbehre
-handle {covers = %search} _ impossible
+handle : Turns ~~> IO ()
+handle
+  = [ (\ args => let files = fromMaybe Prelude.Nil args.arguments in
+                 putStrLn "Received the files: \{show files}")
+    , "left"  ::= [ const $ putStrLn "Took a left turn"
+                  , "left"  ::= [ const $ putStrLn "Half turn, leftwise" ]
+                  , "right" ::= [ const $ putStrLn "Back to the start (lr)" ]
+                  ]
+    , "right" ::= [ const $ putStrLn "Took a right turn"
+                  , "left"  ::= [ const $ putStrLn "Back to the start (rl)" ]
+                  , "right" ::= [ const $ putStrLn "Half turn, rightwise" ]
+                  ]
+    ]
+
+main : IO ()
+main = Turns .handleWith handle
