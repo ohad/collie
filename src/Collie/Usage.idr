@@ -10,13 +10,8 @@ import Data.SnocList
 import Data.String
 
 reflow : (width : Nat) -> String -> List String
-reflow w = map concat . init . (intersperse " ") . words
+reflow w = map unwords . init . words
   where
-    -- shift the accumulator into a line, removing the final " ", if present
-    shift : SnocList String -> List String
-    shift (sx :< " ") = sx <>> []
-    shift sx = sx <>> []
-
     init : List String -> List (List String)
     go : Nat -> SnocList String -> List String -> List (List String)
 
@@ -24,12 +19,12 @@ reflow w = map concat . init . (intersperse " ") . words
     init (" " :: xs) = init xs -- remove initial space
     init (x :: xs) = go (w `minus` length x) [< x] xs
 
-    go Z acc xs        = (shift acc) :: init xs
-    go n acc []        = [shift acc]
+    go Z acc xs        = (acc <>> []) :: init xs
+    go n acc []        = [acc <>> []]
     go n acc (x :: xs) =
       let l = length x in
-      if n < l then (shift acc) :: init (x :: xs)
-      else go (n `minus` l) (acc :< x) xs
+      if n < l + 1 then (acc <>> []) :: init (x :: xs)
+      else go (n `minus` (1 + l)) (acc :< x) xs
 
 public export
 Printer : Type
