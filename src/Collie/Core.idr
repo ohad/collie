@@ -26,14 +26,14 @@ ParsedArguments f ducer = f $ Carrier ducer.domain
 public export
 record Command (name : String) where
   constructor MkCommand
-  description : List String
+  description : String
   subcommands : Fields Command
   modifiers : Fields Modifier
   arguments : Arguments
 
 public export
 basic : {cmdName : String} ->
-        (description : List String) -> Arguments -> Command cmdName
+        (description : String) -> Arguments -> Command cmdName
 basic desc args = MkCommand
   { description = desc
   , subcommands = []
