@@ -12,12 +12,12 @@ public export
 
 public export
 Flag : Fields (const Type)
-Flag = [ "description" ::= String
+Flag = [ "description" ::= List String
        , "default"     ::=  Bool]
 
 public export
 Option : Fields (const Type)
-Option = [ "description" ::= String
+Option = [ "description" ::= List String
          , "arguments"   ::= Arguments]
 
 public export
@@ -27,14 +27,14 @@ data Modifier : (nm : String) -> Type where
 
 public export
 flag : {0 nm : String} ->
-       (description : String) ->
+       (description : List String) ->
        {default False defaultVal : Bool} ->
        Modifier nm
 flag desc = MkFlag $ MkRecord [desc, defaultVal]
 
 public export
 option : {0 nm : String} ->
-         (description : String) ->
+         (description : List String) ->
          (arguments : Arguments) ->
          Modifier nm
 option desc ducer = MkOption $ MkRecord [desc, ducer]

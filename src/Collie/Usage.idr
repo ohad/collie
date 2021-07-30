@@ -10,37 +10,43 @@ public export
 Printer : Type
 Printer = Nat -> List String
 
-export
-namedString : String -> String -> Nat -> String
-namedString name str width
-  = let pad = 2 + width `minus` length name
-    in name ++ indent pad str
+mapFstAndRest : (fst, rest : a -> b) -> List a -> List b
+mapFstAndRest fst rest []  = []
+mapFstAndRest fst rest (x :: xs) = fst x :: map rest xs
 
-Show (Modifier str) where
-  show (MkFlag   flg) = flg.project "description"
-  show (MkOption opt) = opt.project "description"
+export
+namedBlock : (name : String) -> List String -> Nat -> Printer
+namedBlock name lines width i
+  = let padInitial = 2 + width `minus` length name
+        padRest    = 2 + width
+    in mapFstAndRest ((indent i name ++) . (indent padInitial))
+                     (indent (i + padRest)) lines
+
+
+(.description) : Modifier str -> List String
+(MkFlag   flg).description = flg.project "description"
+(MkOption opt).description = opt.project "description"
 
 maxNameWidth : Fields a -> Nat
 maxNameWidth xs = foldl (\ u,v => max u (length (fst v))) 0 xs
 
 export
-usageModifier : (name : String) -> Modifier name -> Nat -> Printer
-usageModifier name mod width i = [indent i $ namedString name (show mod) width]
-
-export
 usageModifiers : Fields Modifier -> Nat -> Printer
 usageModifiers xs width
-  = foldr (\(name ** mod),u,i => usageModifier name mod width i ++ u i) (const []) xs
+  = foldr (\(name ** mod),u,i =>
+    namedBlock name mod.description width i ++ u i) (const []) xs
 
 export
 usageCommand : {cmdName : String} -> Command cmdName -> Nat -> Printer
 usageCommand cmd width i =
-  let subWidth : Nat = max (maxNameWidth cmd.subcommands) (maxNameWidth cmd.modifiers) in
-  indent i (namedString cmdName (cmd.description) (2 + width)) ::
-    foldr (\ (_ ** u) => (usageCommand u (subWidth) (2 + i) ++)) [] cmd.subcommands ++
-    case (usageModifiers cmd.modifiers subWidth i) of
-      [] => []
-      xs => [""] ++ xs
+  let subWidth : Nat := max (maxNameWidth cmd.subcommands) (maxNameWidth cmd.modifiers) in
+  (namedBlock cmdName (cmd.description) width i) ++
+  case ( foldr (\ (_ ** u) => (usageCommand u (subWidth) (2 + i) ++)) [] cmd.subcommands
+       , usageModifiers cmd.modifiers subWidth (2 + i)) of
+    ([]  , []) => []
+    ([]  , mods) => mods
+    (subs, []  ) => subs
+    (subs, mods) => subs ++ [""] ++ mods
 
 export
 (.usage) : {cmdName : String} -> Command cmdName -> String
