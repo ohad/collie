@@ -40,13 +40,13 @@ handle : Turns ~~> IO ()
 handle
   = [ (\ args => let files = fromMaybe Prelude.Nil args.arguments in
                  putStrLn "Received the files: \{show files}")
-    , "left"  ::= [ const $ putStrLn "Took a left turn"
-                  , "left"  ::= [ const $ putStrLn "Half turn, leftwise" ]
-                  , "right" ::= [ const $ putStrLn "Back to the start (lr)" ]
-                  ]
     , "right" ::= [ const $ putStrLn "Took a right turn"
                   , "left"  ::= [ const $ putStrLn "Back to the start (rl)" ]
                   , "right" ::= [ const $ putStrLn "Half turn, rightwise" ]
+                  ]
+    , "left"  ::= [ const $ putStrLn "Took a left turn"
+                  , "right" ::= [ const $ putStrLn "Back to the start (lr)" ]
+                  , "left"  ::= [ const $ putStrLn "Half turn, leftwise" ]
                   ]
     ]
 

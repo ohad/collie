@@ -13,22 +13,22 @@ Nil = MkRecord []
 
 infix 1 ::=
 public export
-record Entry (a : String -> Type) (f : Field a -> Type) where
+record Entry
+  (a    : String -> Type)
+  (f    : Field a -> Type)
+  (flds : Fields a) where
   constructor (::=)
   name  : String
-  {type : a name}
-  value : f (name ** type)
+  {auto 0 pos : IsYes (name `isField` flds)}
+  value : f (field (toWitness pos))
 
 public export
 (::) : {flds : Fields a} ->
-       (entry : Entry a f) ->
-       (rec : Record f flds) ->
-  {auto fresh : IsYes (decideFreshness (entry.name ** entry.type)
-                      (\y => (entry.name #? (fst y))) flds)} ->
-  Record f (((entry.name ** entry.type) :: flds)
-           {fresh = toWitness fresh})
-((name ::= value) :: rec)
-  = MkRecord ((value :: rec.content) {fresh = toWitness fresh})
+       (entry : Entry a f flds) ->
+       Record f (remove (toWitness entry.pos)) ->
+       Record f flds
+((name ::= value) {pos}) :: rec
+  = MkRecord $ insertLookedup (toWitness pos) value rec.content
 
 ||| A record where the notion of type for its fields is `Type` itself
 public export
@@ -40,20 +40,3 @@ BasicRecord f flds = Record (\ x => f (snd x)) flds
 public export
 MkBasicRecord : BasicRecord f flds -> BasicRecord f flds
 MkBasicRecord rec = rec
-
-{-
-public export
-(~>) : (Record args flds) -> (0 arg : String) -> {auto pos : arg `Elem` args} ->
-  (Record args flds, arg `Elem` args)
-(~>) rec arg {pos} = (rec, pos)
-
-public export
-UPDATE : RECORD args flds -> (pos : arg `Elem` args) -> flds.LOOKUP pos -> RECORD args flds
-UPDATE (_, rec)  Here       v = (v, rec)
-UPDATE (w, rec) (There pos) v = (w, UPDATE rec pos v)
-
-public export
-(::=) : (recpos : (Record args flds, arg `Elem` args)) ->
-  flds.lookup arg {pos = snd recpos} -> Record args flds
-(rec, pos) ::= v = MkRecord $ UPDATE rec.content pos v
--}
