@@ -65,7 +65,7 @@ public export
 record Handlers (a : Type) (cmd : Field Command) where
   constructor MkHandlers
   here  : ParsedCommand Prelude.id Maybe (cmd .fst) (cmd .snd) -> a
-  there : Record (Handlers a) cmd.snd.subcommands
+  there : Checkable (Handlers a) cmd.snd.subcommands
 
 ||| Givent that we already have list syntax to build records, this gives us the
 ||| ability to use list syntax to build `Handlers`: the head will be the handler
@@ -73,7 +73,7 @@ record Handlers (a : Type) (cmd : Field Command) where
 ||| handlers for the subcommands.
 public export
 (::) : (ParsedCommand Prelude.id Maybe (cmd .fst) (cmd .snd) -> a) ->
-       (Record (Handlers a) cmd.snd.subcommands) ->
+       Checkable (Handlers a) cmd.snd.subcommands ->
        Handlers a cmd
 (::) = MkHandlers
 
@@ -91,7 +91,7 @@ public export
 handle : {0 cmd : Field Command} ->
          ParseTree Prelude.id Maybe cmd.snd -> Handlers a cmd -> a
 handle (Here res)    h = h.here res
-handle (There pos p) h = handle p $ content h.there !! pos
+handle (There pos p) h = handle p $ content h.there.mkCheckable !! pos
 
 ||| Finally we can put the various pieces together to get a toplevel command
 ||| parsing the arguments and handling the resulting command using the
