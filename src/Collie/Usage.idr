@@ -43,10 +43,7 @@ usageCommand cmd width i =
   (namedBlock cmdName (cmd.description) width i) ++
   case ( foldr (\ (_ ** u) => (usageCommand u (subWidth) (2 + i) ++)) [] cmd.subcommands
        , usageModifiers cmd.modifiers subWidth (2 + i)) of
-    ([]  , []) => []
-    ([]  , mods) => mods
-    (subs, []  ) => subs
-    (subs, mods) => subs ++ [""] ++ mods
+    (a, b) => intercalate [""] $ filter ([] /=) [a, b]
 
 export
 (.usage) : {cmdName : String} -> Command cmdName -> String
