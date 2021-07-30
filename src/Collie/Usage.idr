@@ -46,8 +46,8 @@ namedBlock name text nameWidth maxWidth i
         padRest    = 2 + nameWidth
     in mapFstAndRest ((indent i name ++) . (indent padInitial))
                      (indent (i + padRest))
-                     (concat $ map (\u => if padRest + length u > maxWidth
-                                          then reflow (maxWidth `minus` padRest) u
+                     (concat $ map (\u => if i + padRest + length u > maxWidth
+                                          then reflow (maxWidth `minus` (i + padRest)) u
                                           else [u]) $ lines text)
 
 
