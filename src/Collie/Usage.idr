@@ -69,10 +69,7 @@ usageCommand cmd nameWidth maxWidth i =
   (namedBlock cmdName cmd.description nameWidth maxWidth i) ++
   case ( foldr (\ (_ ** u) => (usageCommand u subWidth maxWidth (2 + i) ++)) [] cmd.subcommands
        , usageModifiers cmd.modifiers subWidth maxWidth (2 + i)) of
-    ([]  , []) => []
-    ([]  , mods) => mods
-    (subs, []  ) => subs
-    (subs, mods) => subs ++ [""] ++ mods
+    (a, b) => intercalate [""] $ filter ([] /=) [a, b]
 
 export
 (.usage) : {cmdName : String} -> {default 80 maxWidth : Nat} -> Command cmdName -> String
