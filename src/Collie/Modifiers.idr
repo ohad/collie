@@ -12,7 +12,7 @@ public export
 
 public export
 Flag : Fields (const Type)
-Flag = [ "description" ::= String
+Flag = [ "description" ::=  String
        , "default"     ::=  Bool]
 
 public export

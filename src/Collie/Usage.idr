@@ -6,42 +6,68 @@ import Data.String
 
 import Collie.Core
 
+import Data.SnocList
+import Data.String
+
+reflow : (width : Nat) -> String -> List String
+reflow w = map unwords . init . words
+  where
+    init : List String -> List (List String)
+    go : Nat -> SnocList String -> List String -> List (List String)
+
+    init [] = []
+    init (" " :: xs) = init xs -- remove initial space
+    init (x :: xs) = go (w `minus` length x) [< x] xs
+
+    go Z acc xs        = (acc <>> []) :: init xs
+    go n acc []        = [acc <>> []]
+    go n acc (x :: xs) =
+      let l = length x in
+      if n < l + 1 then (acc <>> []) :: init (x :: xs)
+      else go (n `minus` (1 + l)) (acc :< x) xs
+
 public export
 Printer : Type
 Printer = Nat -> List String
 
-export
-namedString : String -> String -> Nat -> String
-namedString name str width
-  = let pad = 2 + width `minus` length name
-    in name ++ indent pad str
+mapFstAndRest : (fst, rest : a -> b) -> List a -> List b
+mapFstAndRest fst rest []  = []
+mapFstAndRest fst rest (x :: xs) = fst x :: map rest xs
 
-Show (Modifier str) where
-  show (MkFlag   flg) = flg.project "description"
-  show (MkOption opt) = opt.project "description"
+export
+namedBlock : (name : String) -> String -> (nameWidth, maxWidth : Nat) -> Printer
+namedBlock name text nameWidth maxWidth i
+  = let padInitial = 2 + nameWidth `minus` length name
+        padRest    = 2 + nameWidth
+    in mapFstAndRest ((indent i name ++) . (indent padInitial))
+                     (indent (i + padRest))
+                     (concat $ map (\u => if i + padRest + length u > maxWidth
+                                          then reflow (maxWidth `minus` (i + padRest)) u
+                                          else [u]) $ lines text)
+
+
+(.description) : Modifier str -> String
+(MkFlag   flg).description = flg.project "description"
+(MkOption opt).description = opt.project "description"
 
 maxNameWidth : Fields a -> Nat
 maxNameWidth xs = foldl (\ u,v => max u (length (fst v))) 0 xs
 
 export
-usageModifier : (name : String) -> Modifier name -> Nat -> Printer
-usageModifier name mod width i = [indent i $ namedString name (show mod) width]
+usageModifiers : Fields Modifier -> (nameWidth, maxWidth : Nat) -> Printer
+usageModifiers xs nameWidth maxWidth
+  = foldr (\(name ** mod),u,i =>
+    namedBlock name mod.description nameWidth maxWidth i ++ u i) (const []) xs
 
 export
-usageModifiers : Fields Modifier -> Nat -> Printer
-usageModifiers xs width
-  = foldr (\(name ** mod),u,i => usageModifier name mod width i ++ u i) (const []) xs
+usageCommand : {cmdName : String} -> Command cmdName -> (nameWidth, maxWidth : Nat) -> Printer
+usageCommand cmd nameWidth maxWidth i =
+  let subWidth : Nat := max (maxNameWidth cmd.subcommands) (maxNameWidth cmd.modifiers) in
+  (namedBlock cmdName cmd.description nameWidth maxWidth i) ++
+  case ( foldr (\ (_ ** u) => (usageCommand u subWidth maxWidth (2 + i) ++)) [] cmd.subcommands
+       , usageModifiers cmd.modifiers subWidth maxWidth (2 + i)) of
+    (a, b) => intercalate [""] $ filter ([] /=) [a, b]
 
 export
-usageCommand : {cmdName : String} -> Command cmdName -> Nat -> Printer
-usageCommand cmd width i =
-  let subWidth : Nat = max (maxNameWidth cmd.subcommands) (maxNameWidth cmd.modifiers) in
-  indent i (namedString cmdName (cmd.description) (2 + width)) ::
-    foldr (\ (_ ** u) => (usageCommand u (subWidth) (2 + i) ++)) [] cmd.subcommands ++
-    case (usageModifiers cmd.modifiers subWidth i) of
-      [] => []
-      xs => [""] ++ xs
-
-export
-(.usage) : {cmdName : String} -> Command cmdName -> String
-cmd.usage = unlines $ usageCommand cmd (length cmdName) 0
+(.usage) : {cmdName : String} -> {default 80 maxWidth : Nat} -> Command cmdName -> String
+cmd.usage = unlines $ usageCommand cmd (length cmdName) maxWidth 0
