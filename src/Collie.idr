@@ -43,25 +43,6 @@ cmd.parseArgs = do
 infixr 4 -=->
 
 public export
-0 (-=->) : (Command arg) -> Type -> Type
-(-=->) cmd a =
-  {0 covers : ParseTree Prelude.id Maybe cmd} ->
-  {path : List String} ->
-  {focus : _} -> {focusCmd : _} ->
-  {parsed : ParsedCommand Prelude.id Maybe focus focusCmd } ->
-  IsPathTo covers path parsed ->
-  a
-
-public export
-(.withArgs) : {nm : String} -> (cmd : Command nm) -> (cmd -=-> IO a) -> IO a
-cmd .withArgs k
-  = do Right args <- cmd.parseArgs
-         | _ => do putStrLn (cmd .usage)
-                   exitFailure
-       let (MkFocus sub path) = focus args
-       k path
-
-public export
 record Handlers (a : Type) (cmd : Field Command) where
   constructor MkHandlers
   here  : ParsedCommand Prelude.id Maybe (cmd .fst) (cmd .snd) -> a
