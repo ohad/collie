@@ -40,8 +40,6 @@ cmd.parseArgs = do
   pure $ map defaulting $ runIdentity $ runEitherT $ parse cmd args'
 
 
-infixr 4 -=->
-
 public export
 record Handlers (a : Type) (cmd : Field Command) where
   constructor MkHandlers
