@@ -68,6 +68,14 @@ public export
   = (y_fresh_val, vals.toFreshListFreshness y_fresh_vals)
 
 public export
+traverse : {xs : FreshList a neq} ->
+           Applicative f =>
+           ((x : a) -> p x -> f (q x)) ->
+           All {neq} p xs -> f (All {neq} q xs)
+traverse act     []      = pure []
+traverse act ((x :: xs)) = (\x, xs => x :: xs) <$> act _ x <*> traverse act xs
+
+public export
 sequence : Applicative f => All {neq} (f . p) xs -> f (All {neq} p xs)
 sequence [] = pure []
 sequence (val :: vals) = (\x, xs => x :: xs) <$> val <*> sequence vals
