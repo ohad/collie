@@ -41,7 +41,7 @@ git = MkCommand
 
 main : IO Builtin.Unit
 main = do
-  Right cmdParse <- git.withArgs
+  Right cmdParse <- git.parseArgs
   | Left err => putStrLn "Error: \{err}"
   case fst (lookup cmdParse) of
     "--help" => putStrLn "Usage:\n\{git.usage}"

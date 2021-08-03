@@ -13,6 +13,9 @@ import public Data.Magma
 
 import public Syntax.WithProof
 
+import public Decidable.Decidable
+import public Decidable.Decidable.Extra1
+
 %default total
 
 public export
@@ -47,6 +50,7 @@ data Any : (p : (0 nm : String) -> Command nm -> Type) ->
   Here : {0 p : (0 nm : String) -> Command nm -> Type} ->
          p nm cmd -> Any p cmd
   There :
+    {c : String} ->
     (pos : c `IsField` cmd.subcommands) ->
     (parsedSub : Any p (snd $ field pos)) ->
     Any p cmd

@@ -1,0 +1,10 @@
+rm -rf build
+
+$1 --build deeply-nested.ipkg
+build/exec/deeply-nested -- left right expected output
+build/exec/deeply-nested left
+build/exec/deeply-nested right
+build/exec/deeply-nested left left
+build/exec/deeply-nested left right
+build/exec/deeply-nested right left
+build/exec/deeply-nested right right

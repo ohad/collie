@@ -2,14 +2,15 @@ module Data.List.Fresh.Quantifiers
 
 import Data.List.Fresh
 import Data.DPair
+import Decidable.Equality
 
 namespace Any
   public export
   data Any : (0 p : a -> Type) -> FreshList a neq -> Type where
-    Here : {0 xs : FreshList a neq} -> (val : p x) -> {auto 0 fresh : x # xs} ->
-      Any p ((x :: xs) {fresh})
-    There : {0 xs : FreshList a neq} -> (pos : Any p xs) -> {auto 0 fresh : x # xs} ->
-      Any p ((x :: xs) {fresh})
+    Here  : {0 xs : FreshList a neq} -> {auto 0 fresh : x # xs}->
+            (val : p x) -> Any p ((x :: xs) {fresh})
+    There : {0 xs : FreshList a neq} -> {auto 0 fresh : x # xs}->
+            (pos : Any p xs) -> Any p ((x :: xs) {fresh})
 
 export
 Uninhabited (Any {neq} p []) where
@@ -31,6 +32,18 @@ lookupWithProof (There pos) = lookupWithProof pos
 public export
 lookup : {xs : FreshList a neq} -> (pos : Any p xs) -> a
 lookup = fst . lookupWithProof
+
+public export
+remove : {xs : FreshList a neq} -> Any p xs -> FreshList a neq
+removeFreshness : {xs : FreshList a neq} -> (pos : Any p xs) ->
+                  x # xs -> x # remove pos
+
+remove {xs =  _ :: xs}          (Here val)  = xs
+remove {xs = (x :: xs) {fresh}} (There pos)
+  = (x :: remove pos) {fresh = removeFreshness pos fresh}
+
+removeFreshness (Here val)  (_, fresh)   = fresh
+removeFreshness (There pos) (neq, fresh) = (neq, removeFreshness pos fresh)
 
 infixr 4 !!
 
@@ -68,6 +81,10 @@ any decide (x :: xs) = case decide x of
                  No  not_xs => No $ \case
                    Here val  => not_x val
                    There pos => not_xs pos
+
+public export
+isElem : DecEq a => (x : a) -> (xs : FreshList a neq) -> Dec (Any (x ===) xs)
+isElem x = any (decEq x)
 
 public export
 (.update) : Applicative f => {0 xs : FreshList a neq} -> (ps : All p xs) ->
@@ -116,3 +133,27 @@ namespace All
   foldr : (f : a -> b -> b) -> b -> All {neq} (const a) xs -> b
   foldr f x [] = x
   foldr f x (val :: vals) = (val `f` foldr f x vals)
+
+------------------------------------------------------------------------
+-- Insertions
+-- All of these functions are essentially the same but they differ in
+-- their type in what is coming in and what is computed. Depending on
+-- the situation, one will be more convenient than the other.
+-- There is no silver bullet so we define these variations on the same
+-- function.
+------------------------------------------------------------------------
+
+public export
+insertWith :
+  (f : (y : a) -> q y -> p y) ->
+  {xs : FreshList a neq} ->
+  (pos : Any q xs) -> All p (remove pos) -> All p xs
+insertWith f (Here qx)   pxs         = f _ qx :: pxs
+insertWith f (There pos) (py :: pxs) = py :: insertWith f pos pxs
+
+public export
+insertLookedup :
+  {xs : FreshList a neq} ->
+  (pos : Any q xs) -> p (lookup pos) -> All p (remove pos) -> All p xs
+insertLookedup (Here val)  px pxs         = px :: pxs
+insertLookedup (There pos) px (py :: pxs) = py :: insertLookedup pos px pxs

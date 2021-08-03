@@ -8,6 +8,9 @@ build:
 install:
 	idris2 --install collie.ipkg
 
+install-with-src:
+	idris2 --install-with-src collie.ipkg
+
 doc:
 	idris2 --mkdoc collie.ipkg
 

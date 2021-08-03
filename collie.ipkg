@@ -24,10 +24,12 @@ modules
   , Data.List.Fresh
   , Data.List.Fresh.Elem
   , Data.List.Fresh.Quantifiers
+  , Data.List.Fresh.Quantifiers.SmartConstructors
   , Data.Record.Ordered
   , Data.Record.Ordered.Properties
   , Data.Record.Ordered.SmartConstructors
   , Data.Magma
+  , Decidable.Decidable.Extra1
 
 -- main file (i.e. file to load at REPL)
 -- main =
