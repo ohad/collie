@@ -1,13 +1,7 @@
 module Collie.Options.Domain
 
 import Data.Magma
-import public Control.Monad.Error.Either
-import public Control.Monad.Identity
-import public Control.Monad.Error.Interface
-
-public export
-Error : Type -> Type
-Error = EitherT String Identity
+import Collie.Error
 
 public export
 data Domain : Type where
@@ -28,10 +22,26 @@ Carrier = elimDomain id (\ds => ds.Carrier)
 
 public export
 Parser : Domain -> Type
-Parser d = String -> Error $ Carrier d
+Parser d = String -> Either String $ Carrier d
 
 public export
 record Arguments where
   constructor MkArguments
-  domain : Domain
-  parser : Parser domain
+  required  : Bool
+  domain    : Domain
+  rawParser : Parser domain
+
+public export
+(.parser) : (arg : Arguments) -> String -> Error (Carrier arg.domain)
+arg .parser x = mapFst CouldNotParse (arg.rawParser x)
+
+public export
+ParsedArgumentsT : (f : Type -> Type) -> Arguments -> Type
+ParsedArgumentsT f ducer = f $ Carrier ducer.domain
+
+public export
+ParsedArguments : Arguments -> Type
+ParsedArguments ducer
+  = ParsedArgumentsT
+    (if ducer.required then id else Maybe)
+    ducer

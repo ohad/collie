@@ -19,14 +19,6 @@ import public Decidable.Decidable.Extra1
 %default total
 
 public export
-ParsedArgument : Arguments -> Type
-ParsedArgument ducer = Carrier ducer.domain
-
-public export
-ParsedArguments : (f : Type -> Type) -> Arguments -> Type
-ParsedArguments f ducer = f $ Carrier ducer.domain
-
-public export
 record Command (name : String) where
   constructor MkCommand
   description : String
@@ -65,32 +57,65 @@ namespace Any
   map f (Here pcmd) = Here (f _ pcmd)
   map f (There pos p) = There pos (map f p)
 
+  public export
+  traverse : Applicative m =>
+      {0 p, q : (0 nm : String) -> Command nm -> Type} ->
+      {cmd : Command nm} ->
+      ({0 nm : String} -> (cmd : Command nm) -> p nm cmd -> m (q nm cmd)) ->
+      Any p cmd -> m (Any q cmd)
+  traverse f (Here pcmd)   = Here <$> f _ pcmd
+  traverse f (There pos p) = There pos <$> traverse f p
+
 public export
-record ParsedCommand
+record ParsedCommandT
        (f, g : Type -> Type)
        (0 nm : String) (cmd : Command nm) where
+  constructor MkParsedCommandT
+  modifiers : ParsedModifiersT f g cmd.modifiers
+  arguments : ParsedArgumentsT g cmd.arguments
+
+public export
+record ParsedCommand
+       (0 nm : String) (cmd : Command nm) where
   constructor MkParsedCommand
-  modifiers : ParsedModifiers f g cmd.modifiers
-  arguments : ParsedArguments g cmd.arguments
+  modifiers : ParsedModifiers cmd.modifiers
+  arguments : ParsedArguments cmd.arguments
 
 namespace ParsedCommand
 
   public export
   defaulting : {cmd : Command nm} ->
-    ParsedCommand Maybe f nm cmd -> ParsedCommand Prelude.id f nm cmd
-  defaulting (MkParsedCommand mods args)
-    = MkParsedCommand (defaulting mods) args
+    ParsedCommandT Maybe f nm cmd -> ParsedCommandT Prelude.id f nm cmd
+  defaulting (MkParsedCommandT mods args)
+    = MkParsedCommandT (defaulting mods) args
+
+  public export
+  finalising : {cmd : Command nm} ->
+    ParsedCommandT Maybe Maybe nm cmd -> Error (ParsedCommand nm cmd)
+  finalising (MkParsedCommandT mods args)
+    = MkParsedCommand
+    <$> finalising mods
+    <*> finalising MissingArgument _ args
 
 public export
-ParseTree : (f, g : Type -> Type) -> (cmd : Command nm) -> Type
-ParseTree f g = Any (ParsedCommand f g)
+ParseTreeT : (f, g : Type -> Type) -> (cmd : Command nm) -> Type
+ParseTreeT f g = Any (ParsedCommandT f g)
+
+public export
+ParseTree : (cmd : Command nm) -> Type
+ParseTree = Any ParsedCommand
 
 namespace ParsedTree
 
   public export
   defaulting : {cmd : Command nm} ->
-    ParseTree Maybe f cmd -> ParseTree Prelude.id f cmd
+    ParseTreeT Maybe f cmd -> ParseTreeT Prelude.id f cmd
   defaulting = map (\ _ => defaulting)
+
+  public export
+  finalising : {cmd : Command nm} ->
+    ParseTreeT Maybe Maybe cmd -> Error (ParseTree cmd)
+  finalising = traverse (\ _ => finalising)
 
 public export
 lookup : {nm : String} -> {c : Command nm} -> Any p c -> (nm ** Command nm)
@@ -113,24 +138,25 @@ lookup (There {parsedSub, _}) = lookup parsedSub
 -}
 
 public export
-(.update) : {arg : Arguments} -> (ps : ParsedArguments Maybe arg) ->
-  String -> Error $ ParsedArguments Maybe arg
-(.update) {arg = MkArguments (Some d ) parser} (Just _) _
-  = throwE "Too many arguments: only one expected"
-(.update) {arg = MkArguments (Some d ) parser} Nothing x = Just <$> parser x
-(.update) {arg = MkArguments (ALot ds) parser} old     x
+(.update) : {arg : Arguments} -> (ps : ParsedArgumentsT Maybe arg) ->
+  String -> Error $ ParsedArgumentsT Maybe arg
+(.update) {arg = MkArguments _ (Some d ) parser} (Just _) _
+  = throwE TooManyArguments
+(.update) {arg = MkArguments _ (Some d ) parser} Nothing x
+  = bimap CouldNotParse Just (parser x)
+(.update) {arg = MkArguments _ (ALot ds) parser} old     x
   = let _ = openMagma $ Maybe.rawMagma ds
   in do
-    p <- parser x
-    pure (old <+> Just p)
+    p <- bimap CouldNotParse Just $ parser x
+    pure (old <+> p)
 
 public export
 (.parse) : (args : Arguments) ->
-  (old : ParsedArguments Maybe args) ->
+  (old : ParsedArgumentsT Maybe args) ->
   List String ->
-  Error $ ParsedArguments Maybe args
+  Error $ ParsedArgumentsT Maybe args
 args.parse old = foldl (\u,s => do {acc <- u; acc.update s}) (pure old)
 
 public export
-initParsedCommand : {cmd : Command nm} -> ParsedCommand Maybe Maybe nm cmd
-initParsedCommand = MkParsedCommand initNothing Nothing
+initParsedCommand : {cmd : Command nm} -> ParsedCommandT Maybe Maybe nm cmd
+initParsedCommand = MkParsedCommandT initNothing Nothing

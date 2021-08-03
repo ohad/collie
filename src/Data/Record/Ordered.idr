@@ -124,5 +124,13 @@ PartialRecord : (f : Field a -> Type) -> Fields a -> Type
 PartialRecord f flds = Record (Maybe . f) flds
 
 public export
-sequence : Applicative g => Record (g . f) flds  -> g (Record f flds)
+traverse : {flds : Fields a} ->
+           Applicative m =>
+           ((x : Field a) -> f x -> m (g x)) ->
+           Record f flds  -> m (Record g flds)
+traverse f rec = MkRecord <$> (Quantifiers.traverse f rec.content)
+
+public export
+sequence : Applicative g =>
+           Record (g . f) flds  -> g (Record f flds)
 sequence rec = MkRecord <$> (Quantifiers.sequence rec.content)
