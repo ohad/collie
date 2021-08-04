@@ -60,7 +60,8 @@ public export
   (y # xs) -> (y ** _) # rec.toFreshList
 
 [].toFreshList = []
-((val :: vals) {fresh}).toFreshList = ((_ ** val) :: vals.toFreshList) {fresh = ?hs1}
+((val :: vals) {fresh}).toFreshList = ((_ ** val) :: vals.toFreshList) 
+  {fresh = vals.toFreshListFreshness fresh}
 
 []           .toFreshListFreshness y_fresh_xs = ()
 (val :: vals).toFreshListFreshness (y_fresh_val, y_fresh_vals)
