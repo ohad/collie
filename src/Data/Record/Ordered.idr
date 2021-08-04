@@ -11,7 +11,7 @@ import public Decidable.Equality
 
 public export
 ArgList : Type
-ArgList = FreshList String String.(#)
+ArgList = FreshList String String.(##)
 
 public export
 Field : (String -> Type) -> Type
@@ -19,7 +19,7 @@ Field a = (nm : String ** a nm)
 
 public export
 Fields : (String -> Type) -> Type
-Fields a = FreshList (Field a) ((#) `on` fst)
+Fields a = FreshList (Field a) ((##) `on` fst)
 
 public export
 record Record {0 A : String -> Type}
@@ -44,6 +44,11 @@ isYesBecause : (d : Dec p) -> p -> IsYes d
 isYesBecause (Yes prf) p = ItIsYes
 isYesBecause (No nprf) p = absurd (nprf p)
 
+-- Todo: move to base
+public export
+soNotToEq : {b : Bool} -> So (not b) -> b = False
+soNotToEq {b = False} Oh = Refl
+
 public export
 stringEq : {x, y : String} -> x === y -> (x == y) === True
 stringEq eq = go (decEq x y `isYesBecause` eq) where
@@ -53,9 +58,12 @@ stringEq eq = go (decEq x y `isYesBecause` eq) where
    go p | True = Refl
 
 public export
-IsFieldStale : nm `IsField` flds -> fst nmv === nm -> Not (nmv # flds)
-IsFieldStale (Here Refl) eq (neq , _)  = absurd $ trans (sym $ stringEq eq) neq
-IsFieldStale (There pos) eq (_, fresh) = IsFieldStale pos eq fresh
+IsFieldStale : nm `IsField` flds -> fst nmv === nm ->
+               (0 fresh : nmv # flds) -> Void
+IsFieldStale (Here Refl) eq fresh
+  = absurd $ trans (sym $ stringEq eq) (soNotToEq $ fst $ soAnd fresh)
+IsFieldStale (There pos) eq fresh
+  = IsFieldStale pos eq (snd $ soAnd fresh)
 
 public export
 IsFieldIrrelevant : (p, q : nm `IsField` flds) -> p === q
@@ -88,7 +96,7 @@ tabulate :
   Fields a
 
 public export
-tabulateFreshness : {0 a : String -> Type} -> (args : ArgList) ->
+0 tabulateFreshness : {0 a : String -> Type} -> (args : ArgList) ->
   (f : (arg : String) -> Any (arg ===) args -> a arg) ->
   {0 y : String} -> {0 u : a y} ->
   (y # args) -> (y ** u) # tabulate args f
@@ -98,9 +106,10 @@ tabulate ((x :: xs) {fresh}) f
   = ((x ** f x (Here Refl)) :: tabulate xs (\u, pos => f u $ There pos))
     {fresh = tabulateFreshness xs _ fresh}
 
-tabulateFreshness    []     f x = ()
-tabulateFreshness (x :: xs) f (y_fresh_x, y_fresh_xs)
-  = (y_fresh_x, tabulateFreshness xs _ y_fresh_xs)
+tabulateFreshness    []     f fresh = Oh
+tabulateFreshness (x :: xs) f fresh
+  = let (y_fresh_x, y_fresh_xs) = soAnd fresh in
+    andSo (y_fresh_x, tabulateFreshness xs _ y_fresh_xs)
 
 public export
 map : (f : (nm : String) -> a nm -> b nm) -> Fields a -> Fields b

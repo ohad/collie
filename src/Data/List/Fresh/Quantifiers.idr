@@ -3,6 +3,7 @@ module Data.List.Fresh.Quantifiers
 import Data.List.Fresh
 import Data.DPair
 import Decidable.Equality
+import Data.So
 
 namespace Any
   public export
@@ -35,15 +36,17 @@ lookup = fst . lookupWithProof
 
 public export
 remove : {xs : FreshList a neq} -> Any p xs -> FreshList a neq
-removeFreshness : {xs : FreshList a neq} -> (pos : Any p xs) ->
-                  x # xs -> x # remove pos
+0 removeFreshness : {xs : FreshList a neq} -> (pos : Any p xs) ->
+                    x # xs -> x # remove pos
 
 remove {xs =  _ :: xs}          (Here val)  = xs
 remove {xs = (x :: xs) {fresh}} (There pos)
   = (x :: remove pos) {fresh = removeFreshness pos fresh}
 
-removeFreshness (Here val)  (_, fresh)   = fresh
-removeFreshness (There pos) (neq, fresh) = (neq, removeFreshness pos fresh)
+removeFreshness (Here val)  fresh = snd (soAnd fresh)
+removeFreshness (There pos) fresh =
+  let (neq, fresh) = soAnd fresh in
+  andSo (neq, removeFreshness pos fresh)
 
 infixr 4 !!
 
@@ -56,16 +59,17 @@ public export
 (.toFreshList) : {xs : FreshList a neq} -> (rec : All p xs) ->
   FreshList (x : a ** p x) (neq `on` (.fst))
 public export
-(.toFreshListFreshness) : {xs : FreshList a neq} -> (rec : All p xs) ->
+0 (.toFreshListFreshness) : {xs : FreshList a neq} -> (rec : All p xs) ->
   (y # xs) -> (y ** _) # rec.toFreshList
 
 [].toFreshList = []
-((val :: vals) {fresh}).toFreshList = ((_ ** val) :: vals.toFreshList) 
+((val :: vals) {fresh}).toFreshList = ((_ ** val) :: vals.toFreshList)
   {fresh = vals.toFreshListFreshness fresh}
 
-[]           .toFreshListFreshness y_fresh_xs = ()
-(val :: vals).toFreshListFreshness (y_fresh_val, y_fresh_vals)
-  = (y_fresh_val, vals.toFreshListFreshness y_fresh_vals)
+[]           .toFreshListFreshness y_fresh_xs  = Oh
+(val :: vals).toFreshListFreshness y_fresh_xxs
+  = let (y_fresh_val, y_fresh_vals) = soAnd y_fresh_xxs in
+    andSo (y_fresh_val, vals.toFreshListFreshness y_fresh_vals)
 
 public export
 sequence : Applicative f => All {neq} (f . p) xs -> f (All {neq} p xs)

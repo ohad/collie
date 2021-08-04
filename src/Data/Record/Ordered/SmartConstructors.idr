@@ -69,14 +69,12 @@ namespace Infer
   (::) : {flds : Fields a} ->
          (entry : Entry a f) ->
          (rec : Inferrable f flds) ->
-    {auto fresh : IsYes (decideFreshness (entry.name ** entry.type)
-                        (\y => (entry.name #? (fst y))) flds)} ->
-    Inferrable f (((entry.name ** entry.type) :: flds)
-                 {fresh = toWitness fresh})
+    {auto 0 fresh : (entry.name ** entry.type) # flds} ->
+    Inferrable f ((entry.name ** entry.type) :: flds)
   ((name ::= value) :: rec)
     = MkInferrable
     $ MkRecord
-    $ (value :: rec.mkInferrable.content) {fresh = toWitness fresh}
+    $ (value :: rec.mkInferrable.content)
 
 ||| A record where the notion of type for its fields is `Type` itself
 public export
