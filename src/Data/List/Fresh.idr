@@ -15,29 +15,32 @@ public export
 data FreshList : (a : Type) -> (neq : Rel a) -> Type
 
 public export
-(#) : {0 a : Type} -> {neq : Rel a} -> (x : a) -> (xs : FreshList a neq) -> Type
+(#) : {neq : Rel a} -> (x : a) -> (xs : FreshList a neq) -> Type
 
 public export
 data FreshList : (a : Type) -> (neq : Rel a) -> Type where
   Nil  : FreshList a neq
-  (::) : (x : a) -> (xs : FreshList a neq) -> {auto 0 fresh : (#) {neq} x xs} ->
+  (::) : (x : a) -> (xs : FreshList a neq) ->
+         {auto 0 fresh : x # xs} ->
          FreshList a neq
+
+%name FreshList xs, ys, zs
+
+x #    []     = Unit
+x # (y :: xs) = (x `neq` y, x # xs)
 
 namespace FreshList1
 
   public export
   data FreshList1 : (a : Type) -> (neq : Rel a) -> Type where
     (::) : (x : a) -> (xs : FreshList a neq) ->
-           {auto 0 fresh : (#) {neq} x xs} ->
+           {auto 0 fresh : x # xs} ->
            FreshList1 a neq
 
-%name FreshList xs, ys, zs
-
-x #    []           = Unit
-x # (y :: xs) {neq} = (x `neq` y , (#) {neq} x xs)
-
-
-parameters {0 A : Type} {0 Aneq : Rel A} {0 B : Type} {0 Bneq : Rel B} (F : A -> B)
+parameters
+  {0 A : Type} {0 Aneq : Rel A}
+  {0 B : Type} {0 Bneq : Rel B}
+  (F : A -> B)
   (Injectivity : (x,y : A) -> x `Aneq` y -> F x `Bneq` F y)
 
   public export
@@ -49,9 +52,9 @@ parameters {0 A : Type} {0 Aneq : Rel A} {0 B : Type} {0 Bneq : Rel B} (F : A ->
   map     []              = []
   map ((x :: xs) {fresh}) = (F x :: map xs) {fresh = mapFreshness xs fresh}
 
-  mapFreshness     []              _
+  mapFreshness    []     _
     = ()
-  mapFreshness ((y :: ys) {fresh}) (x_fresh_y, x_fresh_ys)
+  mapFreshness (y :: ys) (x_fresh_y, x_fresh_ys)
     = (Injectivity _ _ x_fresh_y, mapFreshness ys x_fresh_ys)
 
 namespace View
