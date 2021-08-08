@@ -34,8 +34,8 @@ data FreshList : (a : Type) -> (neq : BRel a) -> Type where
 
 %name FreshList xs, ys, zs
 
-x ##    []           = True
-x ## (y :: xs) {neq} = (x `neq` y) && (x ## xs)
+x ##    []     = True
+x ## (y :: xs) = (x `neq` y) && (x ## xs)
 
 x # xs = So (x ## xs)
 

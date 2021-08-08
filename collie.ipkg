@@ -15,20 +15,21 @@ depends = contrib
 -- modules to install
 modules
   = Collie
+  , Collie.Core
+  , Collie.Error
+  , Collie.Modifiers
   , Collie.Options.Domain
   , Collie.Options.Usual
-  , Collie.Modifiers
-  , Collie.Core
   , Collie.Parser
   , Collie.Usage
   , Data.List.Fresh
   , Data.List.Fresh.Elem
   , Data.List.Fresh.Quantifiers
   , Data.List.Fresh.Quantifiers.SmartConstructors
+  , Data.Magma
   , Data.Record.Ordered
   , Data.Record.Ordered.Properties
   , Data.Record.Ordered.SmartConstructors
-  , Data.Magma
   , Decidable.Decidable.Extra1
 
 -- main file (i.e. file to load at REPL)

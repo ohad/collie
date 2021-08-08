@@ -29,7 +29,7 @@ import public System
 
 public export
 (.parseArgs) : (cmd : Command nm) -> HasIO io =>
-  io (String `Either` ParseTree Prelude.id Maybe cmd)
+  io (String `Either` ParseTreeT Maybe Maybe cmd)
 cmd.parseArgs = do
   args <- getArgs
   let args' =
@@ -37,13 +37,13 @@ cmd.parseArgs = do
           [] => []
           _ :: xs => xs
   -- putStrLn "parsing arguments: \{show $ cmd.name :: args'}"
-  pure $ map defaulting $ runIdentity $ runEitherT $ parse cmd args'
+  pure $ mapFst show $ parse cmd args'
 
 
 public export
 record Handlers (a : Type) (cmd : Field Command) where
   constructor MkHandlers
-  here  : ParsedCommand Prelude.id Maybe (cmd .fst) (cmd .snd) -> a
+  here  : ParsedCommand (cmd .fst) (cmd .snd) -> a
   there : Checkable (Handlers a) cmd.snd.subcommands
 
 ||| Givent that we already have list syntax to build records, this gives us the
@@ -51,7 +51,7 @@ record Handlers (a : Type) (cmd : Field Command) where
 ||| for the toplevel command and the tail will go towards building the record of
 ||| handlers for the subcommands.
 public export
-(::) : (ParsedCommand Prelude.id Maybe (cmd .fst) (cmd .snd) -> a) ->
+(::) : (ParsedCommand (cmd .fst) (cmd .snd) -> a) ->
        Checkable (Handlers a) cmd.snd.subcommands ->
        Handlers a cmd
 (::) = MkHandlers
@@ -68,7 +68,7 @@ public export
 ||| constructor and finish up with `here`.
 public export
 handle : {0 cmd : Field Command} ->
-         ParseTree Prelude.id Maybe cmd.snd -> Handlers a cmd -> a
+         ParseTree cmd.snd -> Handlers a cmd -> a
 handle (Here res)    h = h.here res
 handle (There pos p) h = handle p $ content h.there.mkCheckable !! pos
 
@@ -81,4 +81,7 @@ cmd .handleWith h
   = do Right args <- cmd.parseArgs
          | _ => do putStrLn (cmd .usage)
                    exitFailure
+       let Right args = ParsedTree.finalising args
+         | Left err => do putStrLn (show err)
+                          exitFailure
        handle args h
