@@ -4,6 +4,8 @@ import Collie.Options.Domain
 import Data.Magma
 import Data.String
 
+%default total
+
 public export
 none : Arguments
 none = MkArguments

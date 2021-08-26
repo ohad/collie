@@ -5,8 +5,10 @@ import Data.String
 import Data.Either
 import Data.Maybe
 import Data.Fun
-import Data.Record.Ordered
+import Data.Record
 import Collie.Core
+
+%default total
 
 public export
 parseCommand : (cmd : Command nm) -> List String ->

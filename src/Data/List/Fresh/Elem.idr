@@ -2,6 +2,8 @@ module Data.List.Fresh.Elem
 
 import Data.List.Fresh
 
+%default total
+
 public export
 data Elem : a -> FreshList a neq -> Type where
   Here  : Elem x ((x :: xs) {fresh})

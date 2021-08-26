@@ -3,6 +3,8 @@ module Collie.Options.Domain
 import Data.Magma
 import Collie.Error
 
+%default total
+
 public export
 data Domain : Type where
   Some : (d  : Type    ) -> Domain
@@ -33,7 +35,7 @@ record Arguments where
 
 public export
 (.parser) : (arg : Arguments) -> String -> Error (Carrier arg.domain)
-arg .parser x = mapFst CouldNotParse (arg.rawParser x)
+arg .parser x = fromEither $ mapFst CouldNotParse (arg.rawParser x)
 
 public export
 ParsedArgumentsT : (f : Type -> Type) -> Arguments -> Type

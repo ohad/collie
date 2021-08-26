@@ -8,6 +8,8 @@ module Data.List.Fresh
 
 import public Data.So
 
+%default total
+
 -- Boolean "relation"
 public export
 BRel : Type -> Type

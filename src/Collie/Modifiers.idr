@@ -1,10 +1,12 @@
 module Collie.Modifiers
 
 import Data.Magma
-import public Data.Record.Ordered
+import public Data.Record
 import public Collie.Options.Domain
 import public Collie.Error
 import Data.Maybe
+
+%default total
 
 infix 4 ::=
 public export
