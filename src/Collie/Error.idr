@@ -44,9 +44,9 @@ Applicative Error where
   Pure f   <*> Fail es2 = Fail es2
 
 export
-Monad Error where
-  Fail es >>= _ = Fail es
-  Pure x  >>= f = f x
+(>>=) : Error a -> (a -> Error b) -> Error b
+Fail es >>= _ = Fail es
+Pure x  >>= f = f x
 
 export
 Show ErrorMsg where
