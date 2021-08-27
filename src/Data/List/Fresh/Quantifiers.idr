@@ -5,6 +5,8 @@ import Data.DPair
 import Decidable.Equality
 import Data.So
 
+%default total
+
 namespace Any
   public export
   data Any : (0 p : a -> Type) -> FreshList a neq -> Type where

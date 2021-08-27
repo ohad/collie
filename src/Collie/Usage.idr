@@ -9,8 +9,10 @@ import Collie.Core
 import Data.SnocList
 import Data.String
 
+%default total
+
 reflow : (width : Nat) -> String -> List String
-reflow w = map unwords . init . words
+reflow w = map unwords . init . assert_total words
   where
     init : List String -> List (List String)
     go : Nat -> SnocList String -> List String -> List (List String)
@@ -24,7 +26,7 @@ reflow w = map unwords . init . words
     go n acc (x :: xs) =
       let l = length x in
       if n < l + 1 then (acc <>> []) :: init (x :: xs)
-      else go (n `minus` (1 + l)) (acc :< x) xs
+      else go (assert_smaller n (n `minus` (1 + l))) (acc :< x) xs
 
 public export
 Printer : Type
@@ -60,11 +62,13 @@ usageModifiers xs nameWidth maxWidth
     namedBlock name mod.description nameWidth maxWidth i ++ u i) (const []) xs
 
 export
-usageCommand : {cmdName : String} -> Command cmdName -> (nameWidth, maxWidth : Nat) -> Printer
+usageCommand :
+  {cmdName : String} -> Command cmdName ->
+  (nameWidth, maxWidth : Nat) -> Printer
 usageCommand cmd nameWidth maxWidth i =
   let subWidth : Nat := max (maxNameWidth cmd.subcommands) (maxNameWidth cmd.modifiers) in
   (namedBlock cmdName cmd.description nameWidth maxWidth i) ++
-  case ( foldr (\ (_ ** u) => (usageCommand u subWidth maxWidth (2 + i) ++)) [] cmd.subcommands
+  case assert_total (foldr (\ (_ ** u) => (usageCommand u subWidth maxWidth (2 + i) ++)) [] cmd.subcommands
        , usageModifiers cmd.modifiers subWidth maxWidth (2 + i)) of
     (a, b) => intercalate [""] $ filter ([] /=) [a, b]
 

@@ -1,9 +1,9 @@
 ||| Selectively ported from agdARGS's Data.Recrod.SmartConstructors
 |||
 ||| Please port more if you want!
-module Data.Record.Ordered.SmartConstructors
+module Data.Record.SmartConstructors
 
-import Data.Record.Ordered
+import Data.Record
 
 %default total
 

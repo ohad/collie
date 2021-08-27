@@ -27,9 +27,8 @@ modules
   , Data.List.Fresh.Quantifiers
   , Data.List.Fresh.Quantifiers.SmartConstructors
   , Data.Magma
-  , Data.Record.Ordered
-  , Data.Record.Ordered.Properties
-  , Data.Record.Ordered.SmartConstructors
+  , Data.Record
+  , Data.Record.SmartConstructors
   , Decidable.Decidable.Extra1
 
 -- main file (i.e. file to load at REPL)

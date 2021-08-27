@@ -12,12 +12,9 @@ import public Collie.Usage
 import public Collie.Options.Domain
 import public Collie.Options.Usual
 import public Collie.Modifiers
-import public Data.Record.Ordered
-import public Data.Record.Ordered.SmartConstructors
-import public Data.Record.Ordered.Properties
+import public Data.Record
+import public Data.Record.SmartConstructors
 
-
-import public Data.Vect
 import public Data.DPair
 import public Data.Magma
 
@@ -37,7 +34,9 @@ cmd.parseArgs = do
           [] => []
           _ :: xs => xs
   -- putStrLn "parsing arguments: \{show $ cmd.name :: args'}"
-  pure $ mapFst show $ parse cmd args'
+  let Pure res = parse cmd args'
+       | err => pure $ Left (show (() <$ err))
+  pure $ Right res
 
 
 public export
@@ -81,7 +80,6 @@ cmd .handleWith h
   = do Right args <- cmd.parseArgs
          | _ => do putStrLn (cmd .usage)
                    exitFailure
-       let Right args = ParsedTree.finalising args
-         | Left err => do putStrLn (show err)
-                          exitFailure
+       let Pure args = ParsedTree.finalising args
+         | Fail err => exitWith err
        handle args h

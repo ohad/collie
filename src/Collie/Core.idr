@@ -3,9 +3,8 @@ module Collie.Core
 import public Collie.Options.Domain
 import public Collie.Options.Usual
 import public Collie.Modifiers
-import public Data.Record.Ordered
-import public Data.Record.Ordered.SmartConstructors
-import public Data.Record.Ordered.Properties
+import public Data.Record
+import public Data.Record.SmartConstructors
 
 import public Data.Vect
 import public Data.DPair
@@ -143,11 +142,11 @@ public export
 (.update) {arg = MkArguments _ (Some d ) parser} (Just _) _
   = throwE TooManyArguments
 (.update) {arg = MkArguments _ (Some d ) parser} Nothing x
-  = bimap CouldNotParse Just (parser x)
+  = fromEither $ bimap CouldNotParse Just (parser x)
 (.update) {arg = MkArguments _ (ALot ds) parser} old     x
   = let _ = openMagma $ Maybe.rawMagma ds
   in do
-    p <- bimap CouldNotParse Just $ parser x
+    p <- fromEither $ bimap CouldNotParse Just $ parser x
     pure (old <+> p)
 
 public export

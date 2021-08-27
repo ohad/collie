@@ -1,8 +1,8 @@
 module Record
 
 import Data.List.Fresh
-import Data.Record.Ordered
-import Data.Record.Ordered.SmartConstructors
+import Data.Record
+import Data.Record.SmartConstructors
 
 rec : BasicRecord Prelude.id ?
 rec = mkInferrable

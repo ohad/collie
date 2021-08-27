@@ -2,6 +2,8 @@ module Data.Magma
 
 import Data.Maybe
 
+%default total
+
 infixr 6 .*.
 
 public export

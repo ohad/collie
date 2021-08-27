@@ -1,6 +1,6 @@
 ||| An ordered record is a record whose field names have to appear in
 ||| a fixed order, but must otherwise be distinct.
-module Data.Record.Ordered
+module Data.Record
 
 import public Data.List.Fresh
 import public Data.List.Fresh.Quantifiers
@@ -8,6 +8,8 @@ import Data.Fin
 import Data.DPair
 import public Decidable.Decidable.Extra1
 import public Decidable.Equality
+
+%default total
 
 public export
 ArgList : Type
