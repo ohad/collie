@@ -1,0 +1,5 @@
+package issue16
+authors = "Collie team"
+
+depends = collie, contrib
+modules = Issue16

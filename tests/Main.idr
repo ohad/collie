@@ -4,6 +4,11 @@ import Test.Golden
 
 %default covering
 
+performance : TestPool
+performance = MkTestPool "Performance regression tests" [] Nothing
+  [ "issue16"
+  ]
+
 datatypes : TestPool
 datatypes = MkTestPool "Datatypes defined in Collie" [] Nothing
   [ "record"
@@ -19,6 +24,7 @@ main : IO ()
 main = runner
   [ withPath "examples" tests
   , withPath "data" datatypes
+  , withPath "performance" performance
   ]
 
  where
