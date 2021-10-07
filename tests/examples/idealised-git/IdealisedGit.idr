@@ -2,7 +2,7 @@ module IdealisedGit
 
 import Collie
 
-git : Command "idealised-git"
+git : Command ([< "idealised-git"])
 git = MkCommand
   { description = """
       A distributed revision control system with an emphasis on speed, \
@@ -18,10 +18,9 @@ git = MkCommand
   , arguments = lotsOf filePath
   }
   where
-    gitPush : Command "push"
+    gitPush : Command (? :< "push")
     gitPush = MkCommand
-      { name = "push"
-      , description = "Update remote refs along with associated objects"
+      { description = "Update remote refs along with associated objects"
       , subcommands = []
       , modifiers = [
             "--force" ::= (flag """
@@ -35,15 +34,15 @@ git = MkCommand
       }
 
 
-{nm : String} -> {cmd : Command nm} -> Show (ParseTreeT f g cmd) where
-  show (Here x) = "\{nm} <<args>>"
-  show (There pos parsedSub) = "\{nm} \{show parsedSub}"
+{nm : _} -> {cmd : Command nm} -> Show (ParseTreeT f g cmd) where
+  show (Here _) = "\{unwords (forget nm <>> [])} <<args>>"
+  show (There _ p) = show p
 
 main : IO Builtin.Unit
 main = do
   Right cmdParse <- git.parseArgs
-  | Left err => putStrLn "Error: \{err}"
+    | Left err => putStrLn "Error: \{err}"
   case fst (lookup cmdParse) of
-    "--help" => putStrLn "Usage:\n\{git.usage}"
+    (_ :< "--help") => putStrLn "Usage:\n\{git.usage}"
     _ => putStrLn "Parsed as: \{show cmdParse}"
   putStrLn ""

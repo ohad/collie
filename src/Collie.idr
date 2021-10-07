@@ -26,7 +26,7 @@ import public System
 %default total
 
 public export
-(.parseArgs) : (cmd : Command nm) -> HasIO io =>
+(.parseArgs) : {nm : _} -> (cmd : Command nm) -> HasIO io =>
   io (String `Either` ParseTreeT Maybe Maybe cmd)
 cmd.parseArgs = do
   args <- getArgs
@@ -41,9 +41,9 @@ cmd.parseArgs = do
 
 
 public export
-record Handlers (a : Type) (cmd : Field Command) where
+record Handlers (a : Type) {p : _} (cmd : Field (CommandAt p)) where
   constructor MkHandlers
-  here  : ParsedCommand (cmd .fst) (cmd .snd) -> a
+  here  : ParsedCommand ? (cmd.snd) -> a
   there : Checkable (Handlers a) cmd.snd.subcommands
 
 ||| Givent that we already have list syntax to build records, this gives us the
@@ -51,7 +51,7 @@ record Handlers (a : Type) (cmd : Field Command) where
 ||| for the toplevel command and the tail will go towards building the record of
 ||| handlers for the subcommands.
 public export
-(::) : (ParsedCommand (cmd .fst) (cmd .snd) -> a) ->
+(::) : (ParsedCommand ? (cmd .snd) -> a) ->
        Checkable (Handlers a) cmd.snd.subcommands ->
        Handlers a cmd
 (::) = MkHandlers
@@ -60,14 +60,14 @@ infixr 4 ~~>
 
 ||| A nicer notation for handlers
 public export
-0 (~~>) : (Command arg) -> Type -> Type
+0 (~~>) : CommandAt p nm -> Type -> Type
 (~~>) cmd a = Handlers a (_ ** cmd)
 
 ||| Handling a parsetree is pretty simple: use `there` together with `(!!)` to
 ||| select the appropriate subhandler while you're encountering  the `There`
 ||| constructor and finish up with `here`.
 public export
-handle : {0 cmd : Field Command} ->
+handle : {0 cmd : Field (CommandAt p)} ->
          ParseTree cmd.snd -> Handlers a cmd -> a
 handle (Here res)    h = h.here res
 handle (There pos p) h = handle p $ content h.there.mkCheckable !! pos
@@ -76,7 +76,7 @@ handle (There pos p) h = handle p $ content h.there.mkCheckable !! pos
 ||| parsing the arguments and handling the resulting command using the
 ||| user-provided handlers
 public export
-(.handleWith) : {nm : String} -> (cmd : Command nm) -> (cmd ~~> IO a) -> IO a
+(.handleWith) : {p, nm : _} -> (cmd : CommandAt p nm) -> (cmd ~~> IO a) -> IO a
 cmd .handleWith h
   = do Right args <- cmd.parseArgs
          | _ => do putStrLn (cmd .usage)
@@ -85,15 +85,16 @@ cmd .handleWith h
          | Fail err => exitWith err
        handle args h
 
-
 namespace Focus
 
   public export
-  data Focus : Command arg -> Type where
-    Nil  : Focus cmd
-    (::) : {0 sub : String} ->
+  data Focus : {- (foc : List String) -> -} Command arg -> Type where
+    Nil  : Focus {-[]-} cmd
+    (::) : {0 arg : _} -> {0 sub : String} -> {- {0 foc : _} -> -}
+           {0 cmd : Command arg} ->
            (pos : sub `IsField` cmd.subcommands) ->
-           Focus (snd $ field pos) -> Focus cmd
+           Focus {-        foc              -} (snd $ field pos) ->
+           Focus {-(fst (field pos) :: foc) -}cmd
 
   public export
   toMaybe : Dec p -> Maybe p
@@ -103,7 +104,8 @@ namespace Focus
   namespace Verb
 
     public export
-    focus : (subs : List String) -> (c : Command arg) -> Maybe (Focus c)
+    focus : (subs : List String) -> (c : Command arg) ->
+            Maybe (Focus {- subs -} c)
     focus []            cmd = pure []
     focus (sub :: subs) cmd
       = do pos <- toMaybe (sub `isField` cmd.subcommands)
@@ -111,14 +113,16 @@ namespace Focus
            pure (pos :: tl)
 
   public export
-  fromString : (str : String) -> {c : Command arg} -> Either String (Focus c)
+  fromString : (str : String) -> {c : Command arg} ->
+               Either String (Focus c)
   fromString str = maybeToEither ("Invalid command: " ++ str)
                  $ focus (assert_total $ words str) c
 
   namespace Noun
 
     public export
-    focus : {arg : String} -> {cmd : Command arg} -> Focus cmd -> Field Command
+    focus : {arg : _} -> {cmd : Command arg} ->
+            Focus cmd -> (foc : _ ** Command foc)
     focus []         = (_ ** cmd)
     focus (_ :: foc) = focus foc
 
@@ -136,19 +140,19 @@ public export
 ||| select the appropriate subhandler while you're encountering  the `There`
 ||| constructor and finish up with `here`.
 public export
-handle' : {0 cmd : Field Command} ->
-          ParseTree cmd.snd -> (cmd.snd ~:> a) -> a
+handle' : {0 nm : _} -> {0 cmd : Command nm} ->
+         ParseTree cmd -> (cmd ~:> a) -> a
 handle' (Here res)    h = h (Right []) res
 handle' (There pos p) h = handle' p $ \case
   Left _    => id
   Right loc => h (Right (pos :: loc))
 
 public export
-(.handleWith') : {nm : String} -> (cmd : Command nm) -> (cmd ~:> IO a) -> IO a
+(.handleWith') : {nm : _} -> (cmd : Command nm) -> (cmd ~:> IO a) -> IO a
 cmd .handleWith' h
   = do Right args <- cmd.parseArgs
          | _ => do putStrLn (cmd .usage)
                    exitFailure
        let Pure args = ParsedTree.finalising args
          | Fail err => exitWith err
-       handle' {cmd = (_ ** cmd)} args h
+       handle' args h

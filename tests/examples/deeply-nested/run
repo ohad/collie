@@ -8,3 +8,10 @@ build/exec/deeply-nested left left
 build/exec/deeply-nested left right
 build/exec/deeply-nested right left
 build/exec/deeply-nested right right
+build/exec/deeply-nested --help
+build/exec/deeply-nested left --help
+build/exec/deeply-nested right --help
+build/exec/deeply-nested left left --help
+build/exec/deeply-nested left right --help
+build/exec/deeply-nested right left --help
+build/exec/deeply-nested right right --help

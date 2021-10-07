@@ -2,7 +2,7 @@ module Issue16
 
 import Collie
 
-idv : Command "idv"
+idv : Command [< "idv"]
 idv = MkCommand
   { description = ""
   , subcommands =
@@ -14,22 +14,12 @@ idv = MkCommand
   , arguments = none
   }
   where
-    installCommand : Command "install"
+    installCommand : Command ([< "idv", "install"])
     installCommand = MkCommand
       { name = "install"
       , description = ""
       , subcommands = []
       , modifiers = ["--api" ::= flag ""]
-      , arguments = MkArguments False (Some String) Right
-      }
-
-    selectCommand : Command "select"
-    selectCommand = MkCommand
-      { name = "select"
-      , description = ""
-      , subcommands =
-        [ "system" ::= basic "" none ]
-      , modifiers = []
       , arguments = MkArguments False (Some String) Right
       }
 

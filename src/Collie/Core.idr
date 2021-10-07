@@ -9,6 +9,8 @@ import public Data.Record.SmartConstructors
 import public Data.Vect
 import public Data.DPair
 import public Data.Magma
+import public Data.SnocList
+import public Data.SnocList1
 
 import public Syntax.WithProof
 
@@ -18,15 +20,22 @@ import public Decidable.Decidable.Extra1
 %default total
 
 public export
-record Command (name : String) where
+data Command   : SnocList1 String -> Type
+public export
+CommandAt : SnocList String -> String -> Type
+
+public export
+record Command (name : SnocList1 String) where
   constructor MkCommand
   description : String
-  subcommands : Fields Command
+  subcommands : Fields (CommandAt (forget name))
   modifiers : Fields Modifier
   arguments : Arguments
 
+CommandAt p str = Command (p :< str)
+
 public export
-basic : {cmdName : String} ->
+basic : {cmdName : _} ->
         (description : String) -> Arguments -> Command cmdName
 basic desc args = MkCommand
   { description = desc
@@ -36,9 +45,9 @@ basic desc args = MkCommand
   }
 
 public export
-data Any : (p : (0 nm : String) -> Command nm -> Type) ->
-           {0 nm : String} -> (cmd : Command nm) -> Type where
-  Here : {0 p : (0 nm : String) -> Command nm -> Type} ->
+data Any : (p : (0 nm : _) -> Command nm -> Type) ->
+           {0 nm : _} -> (cmd : Command nm) -> Type where
+  Here : {0 p : (0 nm : _) -> Command nm -> Type} ->
          p nm cmd -> Any p cmd
   There :
     {c : String} ->
@@ -49,18 +58,18 @@ data Any : (p : (0 nm : String) -> Command nm -> Type) ->
 namespace Any
 
   public export
-  map : {0 p, q : (0 nm : String) -> Command nm -> Type} ->
+  map : {0 p, q : (0 nm : _) -> Command nm -> Type} ->
         {cmd : Command nm} ->
-        ({0 nm : String} -> (cmd : Command nm) -> p nm cmd -> q nm cmd) ->
+        ({0 nm : _} -> (cmd : Command nm) -> p nm cmd -> q nm cmd) ->
         Any p cmd -> Any q cmd
   map f (Here pcmd) = Here (f _ pcmd)
   map f (There pos p) = There pos (map f p)
 
   public export
   traverse : Applicative m =>
-      {0 p, q : (0 nm : String) -> Command nm -> Type} ->
+      {0 p, q : (0 nm : _) -> Command nm -> Type} ->
       {cmd : Command nm} ->
-      ({0 nm : String} -> (cmd : Command nm) -> p nm cmd -> m (q nm cmd)) ->
+      ({0 nm : _} -> (cmd : Command nm) -> p nm cmd -> m (q nm cmd)) ->
       Any p cmd -> m (Any q cmd)
   traverse f (Here pcmd)   = Here <$> f _ pcmd
   traverse f (There pos p) = There pos <$> traverse f p
@@ -68,17 +77,21 @@ namespace Any
 public export
 record ParsedCommandT
        (f, g : Type -> Type)
-       (0 nm : String) (cmd : Command nm) where
+       (0 nm : _) (cmd : Command nm) where
   constructor MkParsedCommandT
   modifiers : ParsedModifiersT f g cmd.modifiers
   arguments : ParsedArgumentsT g cmd.arguments
 
 public export
 record ParsedCommand
-       (0 nm : String) (cmd : Command nm) where
+       (0 nm : _) (cmd : Command nm) where
   constructor MkParsedCommand
   modifiers : ParsedModifiers cmd.modifiers
   arguments : ParsedArguments cmd.arguments
+
+export
+theParsedCommand : {cmd : _} -> ParsedCommand nm cmd -> Command nm
+theParsedCommand _ = cmd
 
 namespace ParsedCommand
 
@@ -117,24 +130,9 @@ namespace ParsedTree
   finalising = traverse (\ _ => finalising)
 
 public export
-lookup : {nm : String} -> {c : Command nm} -> Any p c -> (nm ** Command nm)
+lookup : {nm : _} -> {c : Command nm} -> Any p c -> (nm ** Command nm)
 lookup (Here {}) = (_ ** c)
 lookup (There {parsedSub, _}) = lookup parsedSub
-
-{-
-  Some agda syntax magic goes here, so that:
-
-    [ descr ::= mods & args ]
-  desugars into
-    TheCommand {descr} mods args
-  and
-    descr [ pos ] sub
-  desugars into
-    SubCommand {sub = desc} pos sub
-
-  These can't be just smart constructors though, since they're meant
-  to appear in patterns, I think.
--}
 
 public export
 (.update) : {arg : Arguments} -> (ps : ParsedArgumentsT Maybe arg) ->

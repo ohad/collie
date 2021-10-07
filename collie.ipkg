@@ -1,6 +1,6 @@
 package collie
 -- version =
-authors = "Guillaume Xavier Allais and Ohad Kammar"
+authors = "Guillaume Allais and Ohad Kammar"
 -- maintainers =
 -- license =
 -- brief =
@@ -30,6 +30,7 @@ modules
   , Data.Record
   , Data.Record.SmartConstructors
   , Decidable.Decidable.Extra1
+  , Data.SnocList1
 
 -- main file (i.e. file to load at REPL)
 -- main =

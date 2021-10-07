@@ -63,15 +63,19 @@ usageModifiers xs nameWidth maxWidth
 
 export
 usageCommand :
-  {cmdName : String} -> Command cmdName ->
+  {default False top : Bool} -> -- only print the full path for the top command
+  {nm : _} -> Command nm ->
   (nameWidth, maxWidth : Nat) -> Printer
 usageCommand cmd nameWidth maxWidth i =
   let subWidth : Nat := max (maxNameWidth cmd.subcommands) (maxNameWidth cmd.modifiers) in
+  let cmdName = ifThenElse top (unwords (forget nm <>> [])) (head nm) in
   (namedBlock cmdName cmd.description nameWidth maxWidth i) ++
   case assert_total (foldr (\ (_ ** u) => (usageCommand u subWidth maxWidth (2 + i) ++)) [] cmd.subcommands
        , usageModifiers cmd.modifiers subWidth maxWidth (2 + i)) of
     (a, b) => intercalate [""] $ filter ([] /=) [a, b]
 
 export
-(.usage) : {cmdName : String} -> {default 80 maxWidth : Nat} -> Command cmdName -> String
-cmd.usage = unlines $ usageCommand cmd (length cmdName) maxWidth 0
+(.usage) : {nm : _} -> {default 80 maxWidth : Nat} -> Command nm -> String
+cmd.usage =
+  let nameWidth = length $ unwords (forget nm <>> []) in
+  unlines $ usageCommand {top = True} cmd nameWidth maxWidth 0
