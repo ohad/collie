@@ -66,6 +66,7 @@ handle' "left  right" args = usageOrMsg (theParsedCommand args)
                                         "Back to the start (lr)"
 
 
+{-
 handle' : Turns ~:> IO ()
 handle' "           " args = let files = fromMaybe [] args.arguments in
                              putStrLn "Received the files: \{show files}"
@@ -75,6 +76,7 @@ handle' "right right" args = putStrLn "Half turn, rightwise"
 handle' "left       " args = putStrLn "Took a left turn"
 handle' "left  left " args = putStrLn "Half turn, leftwise"
 handle' "left  right" args = putStrLn "Back to the start (lr)"
+-}
 
 main : IO ()
 main = do -- Turns .handleWith handle
