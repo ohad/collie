@@ -25,24 +25,24 @@ parseModifier : (cmd : Command nm) -> {modName : String} ->
 parseCommand cmd [] old = pure old
 parseCommand cmd ("--" :: xs) old = do
   u <- cmd.arguments.parse old.arguments xs
-  pure $ record { arguments = u} old
+  pure $ { arguments := u } old
 
 parseCommand cmd (x :: xs) old
   = case x `isField` cmd.modifiers of
       No  _   => do u <- old.arguments.update x
-                    parseCommand cmd xs $ record { arguments = u} old
+                    parseCommand cmd xs $ { arguments := u} old
       Yes pos => parseModifier cmd pos xs old (old.modifiers.update pos)
 
 parseModifier  cmd pos rest old factory with (snd $ field pos)
  parseModifier cmd pos rest old factory | MkFlag   flg = do
     mods <- factory True
-    parseCommand cmd rest $ record { modifiers = mods } old
+    parseCommand cmd rest $ { modifiers := mods } old
  parseModifier cmd pos rest old factory | MkOption opt
    = case rest of
        []      => throwE (MissingOptArg modName)
        x :: xs => do args <- (opt.project "arguments").parser x
                      mods <- factory args
-                     parseCommand cmd xs $ record {modifiers = mods} old
+                     parseCommand cmd xs $ { modifiers := mods} old
 
 public export
 parse : (cmd : Command nm) -> List String -> Error $ ParseTreeT Maybe Maybe cmd
