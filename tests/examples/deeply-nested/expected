@@ -6,3 +6,49 @@ Half turn, leftwise
 Back to the start (lr)
 Back to the start (rl)
 Half turn, rightwise
+TOP  A deeply nested example
+  left    Took a left turn
+    left    Took a left turn
+      --help  Print usage
+    right   Took a right turn
+      --help  Print usage
+
+    --help  Print usage
+  right   Took a right turn
+    left    Took a left turn
+      --help  Print usage
+    right   Took a right turn
+      --help  Print usage
+
+    --help  Print usage
+
+  --help  Print usage
+
+TOP left  Took a left turn
+  left    Took a left turn
+    --help  Print usage
+  right   Took a right turn
+    --help  Print usage
+
+  --help  Print usage
+
+TOP right  Took a right turn
+  left    Took a left turn
+    --help  Print usage
+  right   Took a right turn
+    --help  Print usage
+
+  --help  Print usage
+
+TOP left left  Took a left turn
+  --help  Print usage
+
+TOP left right  Took a right turn
+  --help  Print usage
+
+TOP right left  Took a left turn
+  --help  Print usage
+
+TOP right right  Took a right turn
+  --help  Print usage
+

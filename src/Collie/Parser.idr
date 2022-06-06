@@ -7,6 +7,7 @@ import Data.Maybe
 import Data.Fun
 import Data.Record
 import Collie.Core
+import Collie.Error
 
 %default total
 
