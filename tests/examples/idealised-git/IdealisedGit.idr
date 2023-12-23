@@ -2,6 +2,9 @@ module IdealisedGit
 
 import Collie
 
+%hide Data.Record.SmartConstructors.Infer.infix.(::=)
+%hide Collie.Modifiers.infix.(::=)
+
 git : Command "idealised-git"
 git = MkCommand
   { description = """

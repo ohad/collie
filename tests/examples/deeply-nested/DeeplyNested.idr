@@ -5,6 +5,9 @@ module DeeplyNested
 import Collie
 import Data.List.Quantifiers
 
+%hide Data.Record.SmartConstructors.Infer.infix.(::=)
+%hide Collie.Modifiers.infix.(::=)
+
 %default total
 
 Turns : Command "TOP"

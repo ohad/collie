@@ -1,4 +1,5 @@
 1/1: Building DeeplyNested (DeeplyNested.idr)
+Now compiling the executable: deeply-nested
 Received the files: ["left", "right", "expected", "output"]
 Took a left turn
 Took a right turn
