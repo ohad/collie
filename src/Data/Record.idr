@@ -9,6 +9,8 @@ import Data.DPair
 import public Decidable.Decidable.Extra1
 import public Decidable.Equality
 
+%hide Builtin.infixr.(#)
+
 %default total
 
 public export

@@ -5,6 +5,8 @@ module Data.Record.SmartConstructors
 
 import Data.Record
 
+%hide Builtin.infixr.(#)
+
 %default total
 
 namespace Check

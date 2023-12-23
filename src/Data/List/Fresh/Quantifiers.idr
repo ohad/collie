@@ -5,6 +5,8 @@ import Data.DPair
 import Decidable.Equality
 import Data.So
 
+%hide Builtin.infixr.(#)
+
 %default total
 
 namespace Any
