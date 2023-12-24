@@ -2,6 +2,9 @@ module Issue16
 
 import Collie
 
+%hide Data.Record.SmartConstructors.Infer.infix.(::=)
+%hide Collie.Modifiers.infix.(::=)
+
 idv : Command "idv"
 idv = MkCommand
   { description = ""

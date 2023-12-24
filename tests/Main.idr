@@ -29,4 +29,4 @@ main = runner
 
  where
    withPath : String -> TestPool -> TestPool
-   withPath path pool = record { testCases $= map (path ++ "/" ++) } pool
+   withPath path pool = { testCases $= map (path ++ "/" ++) } pool

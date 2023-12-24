@@ -8,6 +8,8 @@ module Data.List.Fresh
 
 import public Data.So
 
+%hide Builtin.infixr.(#)
+
 %default total
 
 -- Boolean "relation"
