@@ -4,6 +4,7 @@ module DeeplyNested
 
 import Collie
 import Data.List.Quantifiers
+import Data.List
 
 %hide Data.Record.SmartConstructors.Infer.infix.(::=)
 %hide Collie.Modifiers.infix.(::=)
@@ -53,5 +54,17 @@ handle
                   ]
     ]
 
+
+handle' : Turns ~:> IO ()
+handle' "           " args = let files = fromMaybe [] args.arguments in
+                             putStrLn "Received the files: \{show files}"
+handle' "right      " args = putStrLn "Took a right turn"
+handle' "right left " args = putStrLn "Back to the start (rl)"
+handle' "right right" args = putStrLn "Half turn, rightwise"
+handle' "left       " args = putStrLn "Took a left turn"
+handle' "left  left " args = putStrLn "Half turn, leftwise"
+handle' "left  right" args = putStrLn "Back to the start (lr)"
+
 main : IO ()
-main = Turns .handleWith handle
+main = do -- Turns .handleWith handle
+          Turns .handleWith' handle'
