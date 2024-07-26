@@ -9,6 +9,7 @@ import Data.Record
 
 %default total
 
+export infix 1 ::=
 namespace Check
 
   public export
@@ -19,7 +20,6 @@ namespace Check
     constructor MkCheckable
     mkCheckable : Record f flds
 
-  infix 1 ::=
   public export
   record Entry
     (a    : String -> Type)
@@ -55,7 +55,6 @@ namespace Infer
     constructor MkInferrable
     mkInferrable : Record f flds
 
-  infix 1 ::=
   public export
   record Entry (a : String -> Type) (f : Field a -> Type) where
     constructor (::=)

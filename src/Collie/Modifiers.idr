@@ -8,7 +8,7 @@ import Data.Maybe
 
 %default total
 
-infix 4 ::=
+export infix 4 ::=
 public export
 (::=) : {0 a : String -> Type} -> (nm : String) -> a nm -> (nm : String ** a nm)
 (::=) = MkDPair

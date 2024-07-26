@@ -55,7 +55,7 @@ public export
        Handlers a cmd
 (::) = MkHandlers
 
-infixr 4 ~~>
+export infixr 4 ~~>
 
 ||| A nicer notation for handlers
 public export

@@ -4,7 +4,7 @@ import Data.Maybe
 
 %default total
 
-infixr 6 .*.
+export infixr 6 .*.
 
 public export
 record RawMagma where

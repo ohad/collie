@@ -52,7 +52,7 @@ removeFreshness (There pos) fresh =
   let (neq, fresh) = soAnd fresh in
   andSo (neq, removeFreshness pos fresh)
 
-infixr 4 !!
+export infixr 4 !!
 
 public export
 (!!) : (prfs : All p xs) -> (pos : Any q xs) -> p (lookup pos)

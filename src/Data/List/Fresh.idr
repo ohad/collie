@@ -17,7 +17,7 @@ public export
 BRel : Type -> Type
 BRel a = a -> a -> Bool
 
-infix 4 #, ##, #?
+export infix 4 #, ##, #?
 
 public export
 data FreshList : (a : Type) -> (neq : BRel a) -> Type
