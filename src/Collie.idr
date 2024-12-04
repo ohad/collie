@@ -18,7 +18,8 @@ import public Data.Record.SmartConstructors
 import public Data.DPair
 import public Data.Magma
 
-import public Data.SnocList
+import public Data.Either
+import public Data.String
 
 import public System
 
@@ -83,3 +84,71 @@ cmd .handleWith h
        let Pure args = ParsedTree.finalising args
          | Fail err => exitWith err
        handle args h
+
+
+namespace Focus
+
+  public export
+  data Focus : Command arg -> Type where
+    Nil  : Focus cmd
+    (::) : {0 sub : String} ->
+           (pos : sub `IsField` cmd.subcommands) ->
+           Focus (snd $ field pos) -> Focus cmd
+
+  public export
+  toMaybe : Dec p -> Maybe p
+  toMaybe (Yes prf) = Just prf
+  toMaybe (No _) = Nothing
+
+  namespace Verb
+
+    public export
+    focus : (subs : List String) -> (c : Command arg) -> Maybe (Focus c)
+    focus []            cmd = pure []
+    focus (sub :: subs) cmd
+      = do pos <- toMaybe (sub `isField` cmd.subcommands)
+           tl <- focus subs (snd $ field pos)
+           pure (pos :: tl)
+
+  public export
+  fromString : (str : String) -> {c : Command arg} -> Either String (Focus c)
+  fromString str = maybeToEither ("Invalid command: " ++ str)
+                 $ focus (assert_total $ words str) c
+
+  namespace Noun
+
+    public export
+    focus : {arg : String} -> {cmd : Command arg} -> Focus cmd -> Field Command
+    focus []         = (_ ** cmd)
+    focus (_ :: foc) = focus foc
+
+data Error : String -> Type where
+
+infixr 4 ~:>
+
+public export
+0 (~:>) : (Command arg) -> Type -> Type
+(~:>) cmd a = (mfoc : Either String (Focus cmd)) ->
+              either Error (\ foc => ParsedCommand ? (snd $ focus foc)) mfoc ->
+              either Error (const a) mfoc
+
+||| Handling a parsetree is pretty simple: use `there` together with `(!!)` to
+||| select the appropriate subhandler while you're encountering  the `There`
+||| constructor and finish up with `here`.
+public export
+handle' : {0 cmd : Field Command} ->
+          ParseTree cmd.snd -> (cmd.snd ~:> a) -> a
+handle' (Here res)    h = h (Right []) res
+handle' (There pos p) h = handle' p $ \case
+  Left _    => id
+  Right loc => h (Right (pos :: loc))
+
+public export
+(.handleWith') : {nm : String} -> (cmd : Command nm) -> (cmd ~:> IO a) -> IO a
+cmd .handleWith' h
+  = do Right args <- cmd.parseArgs
+         | _ => do putStrLn (cmd .usage)
+                   exitFailure
+       let Pure args = ParsedTree.finalising args
+         | Fail err => exitWith err
+       handle' {cmd = (_ ** cmd)} args h
